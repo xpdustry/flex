@@ -69,7 +69,7 @@ repositories {
 
 dependencies {
     // Add "-SNAPSHOT" after the version if you are using the snapshot repository
-    compileOnly("fr.xpdustry:flex:0.1.0" )
+    compileOnly("fr.xpdustry:flex:0.1.0")
 }
 ```
 
@@ -78,16 +78,16 @@ It will pull the plugin from the Xpdustry maven repo.
 Then, to add a new Flex handler, do the following :
 
 ```java
-FlexPlugin plugin=FlexPlugin.getInstance(); // Get the plugin
-  FlexHandlerManager manager=plugin.getFlexHandlerManager(); // Get the Flex handler manager
+FlexPlugin plugin = FlexPlugin.getInstance(); // Get the plugin
+FlexHandlerManager manager = plugin.getFlexHandlerManager(); // Get the Flex handler manager
 // Register a new handler
-  manager.registerFlexHandler("your-plugin-internal-name:admin-prefix",(name,uuid,message)->{
-  if(Vars.netServer.admins.getInfo(uuid).admin){
-  return"";
-  }else{
-  return null;
-  }
-  })
+manager.registerFlexHandler("your-plugin-internal-name:admin-prefix", (name, uuid, message) -> {
+    if (Vars.netServer.admins.getInfo(uuid).admin) {
+        return "";
+    } else {
+        return null;
+    }
+})
 ```
 
 You may be wondering why I return an empty string or null, it's because a component is ignored if
