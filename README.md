@@ -1,34 +1,118 @@
-# TemplatePlugin
+# Flex
 
-[![Build status](https://github.com/Xpdustry/TemplatePlugin/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/Xpdustry/TemplatePlugin/actions/workflows/build.yml)
-[![Mindustry 6.0 | 7.0 ](https://img.shields.io/badge/Mindustry-6.0%20%7C%207.0-ffd37f)](https://github.com/Anuken/Mindustry/releases)
-[![Xpdustry latest](https://repo.xpdustry.fr/api/badge/latest/snapshots/fr/xpdustry/template-plugin?color=00FFFF&name=TemplatePlugin&prefix=v)](https://github.com/Xpdustry/TemplatePlugin/releases)
+[![Build status](https://github.com/Xpdustry/Flex/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/Xpdustry/Flex/actions/workflows/build.yml)
+[![Mindustry 6.0 | 7.0 ](https://img.shields.io/badge/Mindustry-7.0-ffd37f)](https://github.com/Anuken/Mindustry/releases)
+[![Xpdustry latest](https://repo.xpdustry.fr/api/badge/latest/releases/fr/xpdustry/flex?color=00FFFF&name=Flex&prefix=v)](https://github.com/Xpdustry/Flex/releases)
 
 ## Description
 
-**Xpdustry variation for publishing packages to our repo.**
+**"Flex on your friends with awesome chat tags!"**
 
-This template features some cool stuff such as:
+In all seriousness, this plugin allows you to manage the appearance of your chat messages in a very
+simple way using a json file. It's even hot-reloadable with the fail-safe `flex-reload` command.
 
-- [Jitpack](https://jitpack.io/) support.
+### Usage
 
-- GitHub action for easier release and Jitpack usage:
+Edit the list of Flex component in the `./flex-config.json` file.
 
-  - To create a new release, edit `CHANGELOG.md` and then run `./gradlew createRelease`, it will automatically create
-    a release tag and push it to trigger the release workflow. If you pushed your release by mistake, simply run this
-    in your terminal:
+Each Flex component has a `handler` and `template` field.
 
-    ```batch
-    # https://stackoverflow.com/a/5480292/15861283
-    git push --delete origin v{release-version}
-    git tag -d v{release-version}
-    ```
+The `template` is a template string that can wrap an optional value represented by `%VALUE%`.
+
+The `handler` is the name of the handler that will provide the value.
+
+The plugin provides 3 simple handlers to get you started :
+
+- `xpdustry-flex:none` returns an empty string, useful if you want to make your config file more
+  readable.
+
+- `xpdustry-flex:name` returns the name of the player.
+
+- `xpdustry-flex:name-colorless` returns the name of the player without colors.
+
+- `xpdustry-flex:message` returns the message of the player.
+
+So for example, if you want chat messages with the bare minimum :
+
+```json
+[
+  {
+    "handler": "xpdustry-flex:name",
+    "template": "%VALUE%[white]: "
+  },
+  {
+    "handler": "xpdustry-flex:message",
+    "template": "%VALUE%"
+  }
+]
+```
+
+![Example-1](.github/example-1.png)
+
+For a more elegant look, I would suggest the name formatted with `%VALUE% [accent]>[white]`.
+
+![Example-2](.github/example-2.png)
+
+As you can see, possibilities are infinite !
+
+### Adding custom handlers
+
+Let's say you want to add an admin prefix with a plugin.
+
+First, add this in your `build.gradle` :
+
+```gradle
+repositories {
+    // Replace with "https://repo.xpdustry.fr/snapshots" if you want to use snapshots
+    maven { url = uri("https://repo.xpdustry.fr/releases") }
+}
+
+dependencies {
+    // Add "-SNAPSHOT" after the version if you are using the snapshot repository
+    compileOnly("fr.xpdustry:flex:0.1.0" )
+}
+```
+
+It will pull the plugin from the Xpdustry maven repo.
+
+Then, to add a new Flex handler, do the following :
+
+```java
+FlexPlugin plugin=FlexPlugin.getInstance(); // Get the plugin
+  FlexHandlerManager manager=plugin.getFlexHandlerManager(); // Get the Flex handler manager
+// Register a new handler
+  manager.registerFlexHandler("your-plugin-internal-name:admin-prefix",(name,uuid,message)->{
+  if(Vars.netServer.admins.getInfo(uuid).admin){
+  return"";
+  }else{
+  return null;
+  }
+  })
+```
+
+You may be wondering why I return an empty string or null, it's because a component is ignored if
+the handler returns null.
+This way, you can chain components without worrying about template string leftovers.
+
+Finally, add your new component at the beginning of the config file :
+
+```json
+{
+  "handler": "your-plugin-internal-name:admin-prefix",
+  "template": "[red]<ADMIN>[] "
+}
+```
+
+Using the config of the second example, we get a very nice result :
+
+![Example-3](.github/example-3.png)
 
 ## Building
 
 - `./gradlew jar` for a simple jar that contains only the plugin code.
 
-- `./gradlew shadowJar` for a fatJar that contains the plugin and its dependencies (use this for your server).
+- `./gradlew shadowJar` for a fatJar that contains the plugin and its dependencies (use this for
+  your server).
 
 ## Testing
 
@@ -38,37 +122,15 @@ This template features some cool stuff such as:
 
 ## Running
 
-This plugin is compatible with V6 and V7.
+This plugin is compatible with v135+.
 
-## Nice tips
+If your version is v135 and one of your plugin uses Flex in some way, you will
+need [mod-loader](https://github.com/Xpdustry/ModLoaderPlugin) for the dependency resolution.
 
-- When using this template, don't forget to change `plugin.json` and `gradle.properties`.
+## Tips
 
-- This template targets V6 by default, you can change it by editing `minGameVersion` in `plugin.json`.
+- List the available Flex handlers with the `flex-handlers` command.
 
-- Don't forget to edit `props.root-package` in `gradle.properties` to enable NullAway.
+- Reset your components to the default Mindustry chat format with the `flex-reset` command.
 
-- To make sure gradle is always executable do :
-
-```batch
-# https://stackoverflow.com/a/54048315/15861283
-git update-index --chmod=+x gradlew
-git add .
-git commit -m "Changing permission of gradlew"
-git push
-```
-
-- Don't forget to bump your dependencies with the `dependencyUpdates` task.
-
-- If you want to use the Xpdustry template, before doing anything, run this in your terminal to set the `xpdustry-master` branch as master :
-
-```batch
-git fetch origin xpdustry-master
-git checkout xpdustry-master
-git branch -m master old-master
-git branch -m xpdustry-master master
-git branch -rD origin/master
-git push origin master -f
-git branch -D old-master
-git push origin --delete xpdustry-master
-```
+- Gimme GitHub star pls.

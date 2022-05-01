@@ -1,5 +1,5 @@
-import fr.xpdustry.toxopid.util.ModMetadata
 import fr.xpdustry.toxopid.extension.ModTarget
+import fr.xpdustry.toxopid.util.ModMetadata
 import net.ltgt.gradle.errorprone.CheckSeverity
 import net.ltgt.gradle.errorprone.errorprone
 import java.io.ByteArrayOutputStream
@@ -25,9 +25,13 @@ toxopid {
 
 repositories {
     mavenCentral()
+    maven("https://repo.xpdustry.fr/releases")
 }
 
 dependencies {
+    implementation("net.mindustry_ddns:file-store:2.1.0")
+    implementation("com.google.code.gson:gson:2.9.0")
+
     val junit = "5.8.2"
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
@@ -38,8 +42,8 @@ dependencies {
     testCompileOnly("org.jetbrains:annotations:$jetbrains")
 
     // Static analysis
-    annotationProcessor("com.uber.nullaway:nullaway:0.9.5")
-    errorprone("com.google.errorprone:error_prone_core:2.11.0")
+    annotationProcessor("com.uber.nullaway:nullaway:0.9.6")
+    errorprone("com.google.errorprone:error_prone_core:2.13.1")
 }
 
 tasks.withType(JavaCompile::class.java).configureEach {
@@ -79,6 +83,13 @@ tasks.create("createRelease") {
         }
     }
 }
+
+val relocate = tasks.create<com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation>("relocateShadowJar") {
+    target = tasks.shadowJar.get()
+    prefix = "${project.property("props.root-package")}.internal"
+}
+
+tasks.shadowJar.get().dependsOn(relocate)
 
 signing {
     val signingKey: String? by project

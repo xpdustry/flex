@@ -1,13 +1,13 @@
 {
-  "name": "xpdustry-template-plugin",
-  "displayName": "Xpdustry TemplatePlugin",
+  "name": "xpdustry-flex",
+  "displayName": "Xpdustry FlexPlugin",
   "author": "Xpdustry",
-  "description": "A template plugin for easier development, enjoy.",
-  "version": "2.3.2",
-  "minGameVersion": "v126.2",
+  "description": "Flex on your friends with awesome chat tags.",
+  "version": "0.1.0",
+  "minGameVersion": "v135",
   "hidden": true,
   "java": true,
-  "main": "fr.xpdustry.template.TemplatePlugin",
-  "repo": "Xpdustry/TemplatePlugin",
+  "main": "fr.xpdustry.flex.FlexPlugin",
+  "repo": "Xpdustry/Flex",
   "dependencies": []
 }
