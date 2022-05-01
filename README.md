@@ -17,11 +17,11 @@ Edit the list of Flex component in the `./flex-config.json` file.
 
 Each Flex component has a `handler` and `template` field.
 
-The `template` is a template string that can wrap an optional value represented by `%VALUE%`.
+The `template` is a template string that can wrap an optional value represented by `%VALUE%` (there can be multiple `%VALUE%`).
 
 The `handler` is the name of the handler that will provide the value.
 
-The plugin provides 3 simple handlers to get you started :
+The plugin provides 4 simple handlers to get you started :
 
 - `xpdustry-flex:none` returns an empty string, useful if you want to make your config file more
   readable.
