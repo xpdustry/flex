@@ -1,9 +1,13 @@
 package fr.xpdustry.flex;
 
 import arc.util.*;
+import java.io.*;
 import org.jetbrains.annotations.*;
 
-public final class FlexComponent {
+public final class FlexComponent implements Serializable {
+
+  @Serial
+  private static final long serialVersionUID = 5679484897360724417L;
 
   private final String handler;
   private final String template;

@@ -29,7 +29,6 @@ repositories {
 }
 
 dependencies {
-    implementation("net.mindustry_ddns:file-store:2.1.0")
     implementation("com.google.code.gson:gson:2.9.0")
 
     val junit = "5.8.2"

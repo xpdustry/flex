@@ -1,111 +1,117 @@
 package fr.xpdustry.flex;
 
+import arc.*;
+import arc.files.*;
 import arc.util.*;
 import com.google.gson.*;
-import io.leangen.geantyref.*;
+import com.google.gson.reflect.*;
+import java.lang.reflect.*;
 import java.util.*;
 import mindustry.*;
+import mindustry.game.EventType.*;
+import mindustry.gen.*;
 import mindustry.mod.*;
-import net.mindustry_ddns.filestore.*;
-import net.mindustry_ddns.filestore.serial.*;
+import mindustry.net.Administration.*;
 import org.jetbrains.annotations.*;
 
 @SuppressWarnings("unused")
-public class FlexPlugin extends Plugin implements FlexHandlerManager, FlexChatFormatter {
+public final class FlexPlugin extends Plugin {
 
-  private static final List<FlexComponent> DEFAULT_COMPONENTS = List.of(
-    FlexComponent.of("xpdustry-flex:name", "[coral][[%VALUE%[coral]]:[white] "),
-    FlexComponent.of("xpdustry-flex:message", "%VALUE%")
+  private static final Fi FLEX_DIRECTORY = new Fi("./flex");
+
+  private static final Type FLEX_COMPONENT_LIST_TYPE = TypeToken.getParameterized(List.class, FlexComponent.class).getType();
+
+  private static final List<FlexComponent> DEFAULT_NAME_COMPONENTS = List.of(
+    FlexComponent.of("xpdustry-flex:name-colored", "%VALUE%")
+  );
+
+  private static final List<FlexComponent> DEFAULT_CHAT_COMPONENTS = List.of(
+    FlexComponent.of("xpdustry-flex:name-colored", "[coral][[%VALUE%[coral]]:[white] ")
+  );
+
+  private static final List<FlexComponent> DEFAULT_JOIN_COMPONENTS = List.of(
+    FlexComponent.of("xpdustry-flex:name", "[accent]%VALUE%[accent] has connected.")
+  );
+
+  private static final List<FlexComponent> DEFAULT_LEFT_COMPONENTS = List.of(
+    FlexComponent.of("xpdustry-flex:name", "[accent]%VALUE%[accent] has disconnected.")
   );
 
   @SuppressWarnings("NullAway.Init")
   private static FlexPlugin INSTANCE;
-  private final Map<String, FlexHandler> handlers = new HashMap<>();
-  private final Store<List<FlexComponent>> components = FileStore.of(
-    "./flex-config.json",
-    Serializers.gson(new GsonBuilder().setPrettyPrinting().create()),
-    new TypeToken<>() {},
-    DEFAULT_COMPONENTS
+
+  private final Map<String, List<FlexComponent>> configuration = new HashMap<>(
+    Map.of(
+      "name", DEFAULT_NAME_COMPONENTS,
+      "chat", DEFAULT_CHAT_COMPONENTS,
+      "join", DEFAULT_JOIN_COMPONENTS,
+      "left", DEFAULT_LEFT_COMPONENTS
+    )
   );
 
+  private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+  private final ArrayDeque<FlexExtension> extensions = new ArrayDeque<>();
+
   public FlexPlugin() {
+    if (INSTANCE != null) {
+      throw new IllegalStateException("Instanced FlexPlugin twice.");
+    }
     INSTANCE = this;
   }
 
-  public static @NotNull FlexPlugin getInstance() {
-    return Objects.requireNonNull(INSTANCE, ""
-      + "FlexPlugin is null, did you call getInstance() before init() ? "
-      + "Or did you forgot to add the dependency in your plugin.json ?"
-    );
+  public static Iterator<FlexExtension> getExtensions() {
+    return INSTANCE.extensions.descendingIterator();
   }
 
-  public @NotNull FlexChatFormatter getFlexChatFormatter() {
-    return this;
+  public static void registerFlexExtension(final @NotNull FlexExtension extension) {
+    INSTANCE.extensions.add(extension);
   }
 
-  public @NotNull FlexHandlerManager getFlexHandlerManager() {
-    return this;
-  }
-
-  /**
-   * This method is called when game initializes.
-   */
   @Override
   public void init() {
-    Vars.netServer.chatFormatter = this;
+    FLEX_DIRECTORY.mkdirs();
+    reloadAllComponents();
+    registerFlexExtension(StandardFlexExtension.INSTANCE);
+    Config.showConnectMessages.set(false);
 
-    registerFlexHandler("xpdustry-flex:none", (name, uuid, message) -> "");
-    registerFlexHandler("xpdustry-flex:name", (name, uuid, message) -> name);
-    registerFlexHandler("xpdustry-flex:name-colorless", (name, uuid, message) -> Strings.stripColors(name));
-    registerFlexHandler("xpdustry-flex:message", (name, uuid, message) -> message);
+    Events.on(PlayerJoin.class, e -> {
+      e.player.name(formatFlexString("name", e.player));
+      final var join = formatFlexString("join", e.player);
+      if (!join.isBlank()) Call.sendMessage(join);
+    });
 
-    reloadComponents();
+    Vars.netServer.admins.addChatFilter((player, message) -> {
+      Call.sendMessage(formatFlexString("chat", player) + message);
+      return null;
+    });
+
+    Events.on(PlayerLeave.class, e -> {
+      final var left = formatFlexString("left", e.player);
+      if (!left.isBlank()) Call.sendMessage(left);
+    });
   }
 
-  /**
-   * This method is called when the game register the server-side commands.
-   */
   @Override
   public void registerServerCommands(final @NotNull CommandHandler handler) {
-    handler.register("flex-reload", "Reload the Flex config", args -> {
-      reloadComponents();
-    });
-
-    handler.register("flex-handlers", "List the available Flex handlers.", args -> {
-      if (handlers.isEmpty()) {
-        Log.info("None");
-      } else {
-        final var builder = new StringBuilder();
-        builder.append("\nFlex handlers:");
-        handlers.keySet().stream().sorted().forEach(k -> builder.append("\n- ").append(k));
-        Log.info(builder.toString());
+    handler.register("flex-reload", "<name/chat/join/left/all>", "Reload a Flex config", args -> {
+      switch (args[0]) {
+        case "name", "chat", "join", "left" -> reloadComponents(args[0]);
+        case "all" -> reloadAllComponents();
+        default -> Log.info("The parameter @ is not recognized.", args[0]);
       }
     });
-
-    handler.register("flex-reset", "Reset the Flex components to the default. ATTENTION, IT ALSO RESETS THE CONFIG FILE!!!", args -> {
-      components.set(DEFAULT_COMPONENTS);
-      components.save();
-      Log.info("The Flex components have been reset.");
-    });
   }
 
-  @Override
-  public @NotNull Map<String, FlexHandler> getHandlers() {
-    return Collections.unmodifiableMap(handlers);
-  }
-
-  @Override
-  public void registerFlexHandler(final @NotNull String name, final @NotNull FlexHandler handler) {
-    handlers.put(name, handler);
-  }
-
-  @SuppressWarnings("NullAway")
-  @Override
-  public @NotNull String format(@NotNull String name, @NotNull String uuid, @NotNull String message) {
+  private @NotNull String formatFlexString(final @NotNull List<FlexComponent> components, final @NotNull Player player) {
     final var builder = new StringBuilder();
-    for (final var component : components.get()) {
-      final var handler = handlers.get(component.getHandler());
-      final var value = handler.handle(name, uuid, message);
+    for (final var component : components) {
+      final var iterator = getExtensions();
+      String value = null;
+      while (value == null && iterator.hasNext()) {
+        final var extension = iterator.next();
+        value = extension.handleFlexString(component.getHandler(), player);
+      }
       if (value != null) {
         builder.append(component.getTemplate().replaceAll("%VALUE%", value));
       }
@@ -113,26 +119,41 @@ public class FlexPlugin extends Plugin implements FlexHandlerManager, FlexChatFo
     return builder.toString();
   }
 
-  private void reloadComponents() {
-    final var old = components.get();
+  private @NotNull String formatFlexString(final @NotNull String name, final @NotNull Player player) {
+    if (!configuration.containsKey(name)) {
+      throw new IllegalStateException("This ain't supposed to happen my friend...");
+    }
+    return formatFlexString(configuration.get(name), player);
+  }
 
-    try {
-      components.load();
-    } catch (final Exception e) {
-      Log.err("An error occurred while loading the Flex components, fallback to previous.", e);
-      return;
+  private void reloadAllComponents() {
+    reloadComponents("name");
+    reloadComponents("chat");
+    reloadComponents("join");
+    reloadComponents("left");
+  }
+
+  private void reloadComponents(final @NotNull String name) {
+    if (!configuration.containsKey(name)) {
+      throw new IllegalStateException("This ain't supposed to happen my friend...");
     }
 
-    final var missing = components.get().stream()
-      .map(FlexComponent::getHandler)
-      .filter(handler -> !handlers.containsKey(handler))
-      .toList();
+    final var file = FLEX_DIRECTORY.child(name + "-config.json");
 
-    if (!missing.isEmpty()) {
-      components.set(old);
-      Log.err("Missing Flex handlers @ for the given components, fallback to default.", missing);
+    if (!file.exists()) {
+      try (final var writer = file.writer(false)) {
+        gson.toJson(configuration.get(name), writer);
+        Log.info("Successfully created the default @ Flex components.", name);
+      } catch (final Exception e) {
+        throw new RuntimeException("An error occurred while creating the default " + name + " Flex components.", e);
+      }
     } else {
-      Log.info("Successfully loaded the Flex components.");
+      try (final var reader = FLEX_DIRECTORY.child(name + "-config.json").reader()) {
+        configuration.put(name, gson.fromJson(reader, FLEX_COMPONENT_LIST_TYPE));
+        Log.info("Successfully loaded the @ Flex components.", name);
+      } catch (final Exception e) {
+        Log.err("An error occurred while loading the " + name + " Flex components, fallback to previous.", e);
+      }
     }
   }
 }
