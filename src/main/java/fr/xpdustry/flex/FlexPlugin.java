@@ -83,6 +83,7 @@ public final class FlexPlugin extends Plugin {
 
     Vars.netServer.admins.addChatFilter((player, message) -> {
       Call.sendMessage(formatFlexString("chat", player) + message);
+      Log.info("&fi@: @", "&lc" + player.name(), "&lw" + message);
       return null;
     });
 

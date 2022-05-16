@@ -1,5 +1,1 @@
-- V6 support.
-
-- Random improvements.
-
-- Better documentation.
+- Fixed bug where messages were not visible in the console.
