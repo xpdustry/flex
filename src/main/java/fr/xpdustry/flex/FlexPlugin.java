@@ -77,19 +77,32 @@ public final class FlexPlugin extends Plugin {
 
     Events.on(PlayerJoin.class, e -> {
       e.player.name(formatFlexString("name", e.player));
+
       final var join = formatFlexString("join", e.player);
-      if (!join.isBlank()) Call.sendMessage(join);
+      if (!join.isBlank()) {
+        Call.sendMessage(join);
+        if (!Config.showConnectMessages.bool()) {
+          Log.info("@ has connected.", Strings.stripColors(e.player.name()));
+        }
+      }
     });
 
     Vars.netServer.admins.addChatFilter((player, message) -> {
       Call.sendMessage(formatFlexString("chat", player) + message);
-      Log.info("&fi@: @", "&lc" + player.name(), "&lw" + message);
+      if (!Config.showConnectMessages.bool()) {
+        Log.info("&fi@: @", "&lc" + Strings.stripColors(player.name()), "&lw" + message);
+      }
       return null;
     });
 
     Events.on(PlayerLeave.class, e -> {
       final var left = formatFlexString("left", e.player);
-      if (!left.isBlank()) Call.sendMessage(left);
+      if (!left.isBlank()) {
+        Call.sendMessage(left);
+        if (!Config.showConnectMessages.bool()) {
+          Log.info("&lb@&fi&lk has disconnected. &fi&lk[&lb@&fi&lk]", Strings.stripColors(e.player.name()), e.player.uuid());
+        }
+      }
     });
   }
 

@@ -1,1 +1,1 @@
-- Fixed bug where messages were not visible in the console.
+- Fixed bug where chat, join and leave messages were not visible in the console.
