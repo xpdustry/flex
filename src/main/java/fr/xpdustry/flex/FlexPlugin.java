@@ -127,7 +127,7 @@ public final class FlexPlugin extends Plugin {
         value = extension.handleFlexString(component.getHandler(), player);
       }
       if (value != null) {
-        builder.append(component.getTemplate().replaceAll("%VALUE%", value));
+        builder.append(component.getTemplate().replace("%VALUE%", value));
       }
     }
     return builder.toString();
