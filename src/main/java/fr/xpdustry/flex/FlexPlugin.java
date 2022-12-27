@@ -87,13 +87,7 @@ public final class FlexPlugin extends Plugin {
       }
     });
 
-    Vars.netServer.admins.addChatFilter((player, message) -> {
-      Call.sendMessage(formatFlexString("chat", player) + message);
-      if (!Config.showConnectMessages.bool()) {
-        Log.info("&fi@: @", "&lc" + Strings.stripColors(player.name()), "&lw" + message);
-      }
-      return null;
-    });
+    Vars.netServer.chatFormatter = (player, message) -> formatFlexString("chat", player) + message;
 
     Events.on(PlayerLeave.class, e -> {
       final var left = formatFlexString("left", e.player);
