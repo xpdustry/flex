@@ -1,8 +1,8 @@
-# Flex
+# flex
 
 [![Build status](https://github.com/Xpdustry/Flex/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/Xpdustry/Flex/actions/workflows/build.yml)
 [![Mindustry 6.0 | 7.0 ](https://img.shields.io/badge/Mindustry-6.0%20%7C%207.0-ffd37f)](https://github.com/Anuken/Mindustry/releases)
-[![Xpdustry latest](https://maven.xpdustry.com/api/badge/latest/releases/fr/xpdustry/flex?color=00FFFF&name=Flex&prefix=v)](https://github.com/Xpdustry/Flex/releases)
+[![Xpdustry latest](https://maven.xpdustry.com/api/badge/latest/legacy-releases/fr/xpdustry/flex?color=00FFFF&name=flex&prefix=v)](https://github.com/Xpdustry/Flex/releases)
 
 ## Description
 
@@ -70,8 +70,7 @@ First, add this in your `build.gradle` :
 
 ```gradle
 repositories {
-    // Replace with "https://maven.xpdustry.com/snapshots" if you want to use snapshots
-    maven { url = uri("https://maven.xpdustry.com/releases") }
+    maven { url = uri("https://maven.xpdustry.com/legacy-releases") }
 }
 
 dependencies {
