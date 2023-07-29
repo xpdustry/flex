@@ -25,7 +25,7 @@ toxopid {
 
 repositories {
     mavenCentral()
-    maven("https://repo.xpdustry.fr/releases")
+    maven("https://maven.xpdustry.com/releases")
 }
 
 dependencies {
@@ -102,8 +102,8 @@ indra {
         minimumToolchain(17)
     }
 
-    publishReleasesTo("xpdustry", "https://repo.xpdustry.fr/releases")
-    publishSnapshotsTo("xpdustry", "https://repo.xpdustry.fr/snapshots")
+    publishReleasesTo("xpdustry", "https://maven.xpdustry.com/releases")
+    publishSnapshotsTo("xpdustry", "https://maven.xpdustry.com/snapshots")
 
     mitLicense()
 
