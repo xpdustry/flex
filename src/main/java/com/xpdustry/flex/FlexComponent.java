@@ -1,4 +1,4 @@
-package fr.xpdustry.flex;
+package com.xpdustry.flex;
 
 import arc.util.*;
 import java.io.*;

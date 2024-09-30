@@ -1,13 +1,13 @@
 {
-  "name": "xpdustry-flex",
-  "displayName": "Xpdustry FlexPlugin",
-  "author": "Xpdustry",
+  "name": "flex",
+  "displayName": "FlexPlugin",
+  "author": "xpdustry",
   "description": "Flex on your friends with awesome chat tags.",
-  "version": "0.2.4",
-  "minGameVersion": "v140",
+  "version": "1.0.0",
+  "minGameVersion": "146",
   "hidden": true,
   "java": true,
-  "main": "fr.xpdustry.flex.FlexPlugin",
-  "repo": "Xpdustry/Flex",
-  "dependencies": []
+  "main": "com.xpdustry.flex.FlexPlugin",
+  "repo": "xpdustry/flex",
+  "dependencies": ["slf4md"]
 }

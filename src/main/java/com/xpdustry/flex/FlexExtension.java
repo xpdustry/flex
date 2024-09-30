@@ -1,4 +1,4 @@
-package fr.xpdustry.flex;
+package com.xpdustry.flex;
 
 import mindustry.gen.*;
 import org.jetbrains.annotations.*;
