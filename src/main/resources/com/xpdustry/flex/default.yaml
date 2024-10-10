@@ -1,0 +1,15 @@
+pipelines:
+  mindustry-name:
+   - text: "[%player_color%]%player:name_colored%"
+  mindustry-chat:
+   - text: "[coral][[%player:name_colored%[coral]]:[white] %property_message%"
+  mindustry-join:
+   - text: "[accent]%player:name_raw% has connected."
+  mindustry-quit:
+   - text: "[accent]%player:name_raw% has disconnected."
+  custom:
+    - if: { and: [ { not: "permission_imperium.admin" }, "name_starts_with_admin"] }
+      text: "[RED]FAKE[]"
+    - if: "permission:imperium.admin"
+      text: "[accent]ADMIN[]"
+    - text: "[accent]%imperium:rank%[] %player:name_raw%: %property:message%"

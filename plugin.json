@@ -9,5 +9,5 @@
   "java": true,
   "main": "com.xpdustry.flex.FlexPlugin",
   "repo": "xpdustry/flex",
-  "dependencies": ["slf4md"]
+  "dependencies": ["distributor-common", "kotlin-runtime"]
 }

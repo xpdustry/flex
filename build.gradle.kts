@@ -1,18 +1,18 @@
+import com.xpdustry.ksr.kotlinRelocate
 import com.xpdustry.toxopid.extension.anukeXpdustry
 import com.xpdustry.toxopid.spec.ModMetadata
 import com.xpdustry.toxopid.spec.ModPlatform
 import com.xpdustry.toxopid.task.GithubAssetDownload
-import net.ltgt.gradle.errorprone.CheckSeverity
-import net.ltgt.gradle.errorprone.errorprone
 
 plugins {
+    alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.spotless)
     alias(libs.plugins.indra.common)
     alias(libs.plugins.indra.git)
     alias(libs.plugins.indra.publishing)
     alias(libs.plugins.shadow)
     alias(libs.plugins.toxopid)
-    alias(libs.plugins.errorprone.gradle)
+    alias(libs.plugins.ksr)
 }
 
 val metadata = ModMetadata.fromJson(rootProject.file("plugin.json"))
@@ -34,21 +34,20 @@ repositories {
         name = "xpdustry-releases"
         mavenContent { releasesOnly() }
     }
+    maven("https://maven.xpdustry.com/snapshots") {
+        name = "xpdustry-snapshots"
+        mavenContent { snapshotsOnly() }
+    }
 }
 
 dependencies {
     compileOnly(toxopid.dependencies.arcCore)
     compileOnly(toxopid.dependencies.mindustryCore)
     compileOnly(libs.distributor.api)
-
+    implementation(libs.hoplite.core)
+    implementation(libs.hoplite.yaml)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
-
-    compileOnly(libs.checker.qual)
-    testCompileOnly(libs.checker.qual)
-
-    annotationProcessor(libs.nullaway)
-    errorprone(libs.errorprone.core)
 }
 
 signing {
@@ -88,26 +87,25 @@ indra {
 }
 
 spotless {
-    java {
-        palantirJavaFormat()
-        formatAnnotations()
-        importOrder("", "\\#")
-        custom("no-wildcard-imports") { it.apply { if (contains("*;\n")) error("No wildcard imports allowed") } }
+    kotlin {
+        ktlint()
         licenseHeaderFile(rootProject.file("HEADER.txt"))
-        bumpThisNumberIfACustomStepChanges(1)
     }
     kotlinGradle {
         ktlint()
     }
 }
 
+configurations.runtimeClasspath {
+    exclude("org.jetbrains.kotlin")
+    exclude("org.jetbrains.kotlinx")
+}
+
 val generateMetadataFile by tasks.registering {
     inputs.property("metadata", metadata)
     val output = temporaryDir.resolve("plugin.json")
     outputs.file(output)
-    doLast {
-        output.writeText(ModMetadata.toJson(metadata))
-    }
+    doLast { output.writeText(ModMetadata.toJson(metadata)) }
 }
 
 tasks.shadowJar {
@@ -116,24 +114,15 @@ tasks.shadowJar {
     from(generateMetadataFile)
     from(rootProject.file("LICENSE.md")) { into("META-INF") }
     minimize()
+    val shadowPackage = "com.xpdustry.flex.shadow"
+    kotlinRelocate("com.sksamuel.hoplite", "$shadowPackage.hoplite")
+    relocate("org.yaml.snakeyaml", "$shadowPackage.snakeyaml")
 }
 
 tasks.register<Copy>("release") {
     dependsOn(tasks.build)
     from(tasks.shadowJar)
     destinationDir = temporaryDir
-}
-
-tasks.withType<JavaCompile> {
-    options.errorprone {
-        disableWarningsInGeneratedCode = true
-        disable("MissingSummary", "InlineMeSuggester")
-        if (!name.contains("test", ignoreCase = true)) {
-            check("NullAway", CheckSeverity.ERROR)
-            option("NullAway:AnnotatedPackages", rootPackage)
-            option("NullAway:TreatGeneratedAsUnannotated", true)
-        }
-    }
 }
 
 val downloadSlf4md by tasks.registering(GithubAssetDownload::class) {
@@ -150,6 +139,13 @@ val downloadDistributorCommon by tasks.registering(GithubAssetDownload::class) {
     version = "v${libs.versions.distributor.get()}"
 }
 
+val downloadKotlinRuntime by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "kotlin-runtime"
+    asset = "kotlin-runtime.jar"
+    version = "v${libs.versions.kotlin.runtime.get()}-k.${libs.versions.kotlin.core.get()}"
+}
+
 tasks.runMindustryServer {
-    mods.from(downloadSlf4md, downloadDistributorCommon)
+    mods.from(downloadSlf4md, downloadDistributorCommon, downloadKotlinRuntime)
 }
