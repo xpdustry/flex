@@ -30,5 +30,9 @@ import com.xpdustry.distributor.api.plugin.PluginAware
 
 interface FlexExtension : PluginAware {
     val identifier: String
-    fun onPlaceholderRequest(context: FlexContext, query: String): Component?
+
+    fun onPlaceholderRequest(
+        context: FlexContext,
+        query: String,
+    ): Component?
 }

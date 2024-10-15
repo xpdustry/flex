@@ -25,9 +25,26 @@
  */
 package com.xpdustry.flex
 
-fun interface FlexFilter {
+sealed interface FlexFilter {
     fun accepts(context: FlexContext): Boolean
-    object None : FlexFilter {
-        override fun accepts(context: FlexContext): Boolean = true
+
+    data class Placeholder(val placeholder: String) : FlexFilter {
+        override fun accepts(context: FlexContext) = FlexAPI.get().interpolatePlaceholder(context, placeholder) != null
+    }
+
+    data class Any(val filters: List<FlexFilter>) : FlexFilter {
+        override fun accepts(context: FlexContext) = filters.any { it.accepts(context) }
+    }
+
+    data class And(val filters: List<FlexFilter>) : FlexFilter {
+        override fun accepts(context: FlexContext) = filters.all { it.accepts(context) }
+    }
+
+    data class Not(val filters: List<FlexFilter>) : FlexFilter {
+        override fun accepts(context: FlexContext) = filters.none { it.accepts(context) }
+    }
+
+    data object None : FlexFilter {
+        override fun accepts(context: FlexContext) = true
     }
 }

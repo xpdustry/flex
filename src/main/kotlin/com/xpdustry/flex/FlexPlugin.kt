@@ -35,18 +35,14 @@ import com.xpdustry.distributor.api.component.ListComponent
 import com.xpdustry.distributor.api.component.ListComponent.components
 import com.xpdustry.distributor.api.component.TextComponent
 import com.xpdustry.distributor.api.component.TextComponent.text
-import com.xpdustry.distributor.api.key.KeyContainer
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import mindustry.game.EventType
 import mindustry.net.Administration
 
-class FlexPlugin : AbstractMindustryPlugin() {
-    private val pipelines = mutableMapOf<String, FlexPipeline>()
-    private val extensions =
-        listOf(
-            StandardPlayerExtension(this),
-        )
+class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
+    private var config = FlexConfig(emptyMap())
 
+    /*
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         if (!FLEX_CONNECT_MESSAGES.bool()) return
@@ -62,16 +58,18 @@ class FlexPlugin : AbstractMindustryPlugin() {
         }
     }
 
+     */
+
     @EventHandler
     internal fun onPlayerQuit(event: EventType.PlayerLeave) {
         if (!FLEX_CONNECT_MESSAGES.bool()) return
-        val pipeline = pipelines["mindustry-quit"] ?: return logger.warn("Pipeline 'mindustry-quit' not found")
+        // val pipeline = pipelines["mindustry-quit"] ?: return logger.warn("Pipeline 'mindustry-quit' not found")
     }
 
     override fun onLoad() {
     }
 
-    fun load(lookup: FlexExtensionFinder) {
+    fun load() {
         ConfigLoader {
             withClassLoader(FlexPlugin::class.java.classLoader)
             addDefaultDecoders()
@@ -81,69 +79,109 @@ class FlexPlugin : AbstractMindustryPlugin() {
             addDefaultPropertySources()
             addDefaultParsers() // YamlParser is loaded via ServiceLoader here
             addPathSource(directory.resolve("config.yaml"))
-            addDecoder(FlexStepDecoder(lookup))
+            addDecoder(FlexFilterDecoder())
             strict()
         }
     }
 
-    fun interpolate(
+    override fun findExtension(identifier: String): FlexExtension? =
+        DistributorProvider.get()
+            .serviceManager
+            .getProviders(FlexExtension::class.java)
+            .find { it.instance.identifier.equals(identifier, ignoreCase = true) }
+            ?.instance
+
+    override fun interpolatePipeline(
+        context: FlexContext,
+        pipeline: String,
+    ): Component? =
+        config.pipelines[pipeline]?.mapNotNull { step ->
+            if (step.filter == null || step.filter.accepts(context)) {
+                interpolateComponent(context, step.text)
+            } else {
+                null
+            }
+        }
+            ?.takeIf { it.isNotEmpty() }
+            ?.let(::components)
+
+    override fun interpolatePlaceholder(
+        context: FlexContext,
+        placeholder: String,
+    ): Component? {
+        val parts = placeholder.split('_', limit = 1)
+        return try {
+            findExtension(parts[0])?.onPlaceholderRequest(context, parts[1])
+        } catch (e: Exception) {
+            logger.error("Error while interpolating placeholder '{}'", placeholder, e)
+            null
+        }
+    }
+
+    override fun interpolateComponent(
         context: FlexContext,
         component: Component,
-        finder: FlexExtensionFinder,
-    ): Component =
-        when (component) {
-            is ListComponent ->
-                component.toBuilder()
-                    .setComponents(component.components.map { interpolate(context, it, finder) })
-                    .build()
-            is TextComponent -> {
-                val output =
-                    components()
-                        .setTextStyle(component.textStyle)
-                var cursor = 0
-                while (cursor < component.content.length) {
-                    val start = component.content.indexOf('%', cursor)
-                    if (start == -1) {
-                        output.append(text(component.content.substring(cursor)))
-                        break
-                    }
-                    val close = component.content.indexOf('%', start + 1)
-                    if (close == -1) {
-                        output.append(text(component.content.substring(cursor)))
-                        break
-                    }
-                    val placeholder = component.content.substring(start + 1, close)
-                    if (placeholder.isEmpty()) {
-                        output.append(text('%'))
-                        cursor = close + 1
-                        continue
-                    }
-                    val extension = finder.find(placeholder)
-                    if (extension == null) {
-                        output.append(text(component.content.substring(cursor, close + 1)))
-                        cursor = close + 1
-                        continue
-                    }
-                    val result =
-                        try {
-                            extension.onPlaceholderRequest(context, placeholder)
-                        } catch (e: Exception) {
-                            output.append(text(component.content.substring(cursor, close + 1)))
-                            cursor = close + 1
-                            // TODO log error
-                            continue
-                        }
-                    if (result == null) {
-                        output.append(text(component.content.substring(cursor, close + 1)))
-                        cursor = close + 1
-                        continue
-                    }
-                    output.append(result)
-                }
-                output.build()
+    ): Component = when (component) {
+        is ListComponent ->
+            component.toBuilder()
+                .setComponents(component.components.map { interpolateComponent(context, it) })
+                .build()
+        is TextComponent ->
+            component.toBuilder()
+                .setContent()
+                .build()
+        else -> component
+    }
+
+    private fun interpolateTextComponent(
+        context: FlexContext,
+        component: TextComponent,
+    ): Component {
+        val output =
+            components()
+                .setTextStyle(component.textStyle)
+        var cursor = 0
+        while (cursor < component.content.length) {
+            val start = component.content.indexOf('%', cursor)
+            if (start == -1) {
+                output.append(text(component.content.substring(cursor)))
+                break
             }
-            else -> component
+            val close = component.content.indexOf('%', start + 1)
+            if (close == -1) {
+                output.append(text(component.content.substring(cursor)))
+                break
+            }
+            val placeholder = component.content.substring(start + 1, close)
+            if (placeholder.isEmpty()) {
+                output.append(text('%'))
+                cursor = close + 1
+                continue
+            }
+            val extension = findExtension(placeholder)
+            if (extension == null) {
+                output.append(text(component.content.substring(cursor, close + 1)))
+                cursor = close + 1
+                continue
+            }
+            val result =
+                try {
+                    extension.onPlaceholderRequest(context, placeholder)
+                } catch (e: Exception) {
+                    output.append(text(component.content.substring(cursor, close + 1)))
+                    cursor = close + 1
+                    // TODO log error
+                    continue
+                }
+            if (result == null) {
+                output.append(text(component.content.substring(cursor, close + 1)))
+                cursor = close + 1
+                continue
+            }
+            output.append(result)
         }
+        return output.build()
+    }
 
     companion object {
         private val FLEX_CONNECT_MESSAGES: Administration.Config =

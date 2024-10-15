@@ -37,7 +37,10 @@ internal class StandardPlayerExtension(private val plugin: MindustryPlugin) : Fl
 
     override fun getPlugin() = plugin
 
-    override fun onPlaceholderRequest(context: FlexContext, query: String): Component? {
+    override fun onPlaceholderRequest(
+        context: FlexContext,
+        query: String,
+    ): Component? {
         if (context.sender !is PlayerAudience) return null
         val player = context.sender.player
         return when (query.lowercase()) {

@@ -14,6 +14,7 @@ ksr = "1.0.0"
 slf4md = "1.0.1"
 distributor = "4.0.0-rc.3-SNAPSHOT"
 hoplite = "2.8.2"
+kaml = "0.61.0"
 
 # testing
 junit = "5.11.1"
@@ -23,6 +24,7 @@ junit = "5.11.1"
 distributor-api = { module = "com.xpdustry:distributor-common-api", version.ref = "distributor" }
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
+kaml = { module = "com.charleskorn.kaml:kaml", version.ref = "kaml" }
 
 # testing
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -36,4 +38,5 @@ indra-git = { id = "net.kyori.indra.git", version.ref = "indra" }
 toxopid = { id = "com.xpdustry.toxopid", version.ref = "toxopid" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-core" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-core" }
 ksr = { id = "com.xpdustry.ksr", version.ref = "ksr" }

@@ -6,6 +6,7 @@ import com.xpdustry.toxopid.task.GithubAssetDownload
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.spotless)
     alias(libs.plugins.indra.common)
     alias(libs.plugins.indra.git)
@@ -46,6 +47,7 @@ dependencies {
     compileOnly(libs.distributor.api)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
+    implementation(libs.kaml)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
 }

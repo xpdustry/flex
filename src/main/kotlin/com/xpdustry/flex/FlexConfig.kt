@@ -27,8 +27,8 @@ package com.xpdustry.flex
 
 import com.xpdustry.distributor.api.component.Component
 
-data class FlexStep(val text: Component, val filter: FlexFilter = FlexFilter.None) {
-    companion object {
-        fun of(text: Component) = FlexStep(text)
-    }
-}
+internal data class FlexConfig(val pipelines: Map<String, FlexPipeline>)
+
+internal typealias FlexPipeline = List<FlexStep>
+
+internal data class FlexStep(val text: Component, val filter: FlexFilter? = null)
