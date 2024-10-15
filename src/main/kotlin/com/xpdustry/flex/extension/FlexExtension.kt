@@ -23,16 +23,16 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.extension
 
-import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.plugin.PluginAware
+import com.xpdustry.flex.FlexContext
 
-interface FlexExtension : PluginAware {
-    val identifier: String
+public interface FlexExtension : PluginAware {
+    public val identifier: String
 
-    fun onPlaceholderRequest(
+    public fun onPlaceholderRequest(
         context: FlexContext,
         query: String,
-    ): Component?
+    ): String?
 }

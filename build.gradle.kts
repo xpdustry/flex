@@ -6,7 +6,6 @@ import com.xpdustry.toxopid.task.GithubAssetDownload
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.spotless)
     alias(libs.plugins.indra.common)
     alias(libs.plugins.indra.git)
@@ -47,7 +46,6 @@ dependencies {
     compileOnly(libs.distributor.api)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
-    implementation(libs.kaml)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
 }
@@ -98,6 +96,10 @@ spotless {
     }
 }
 
+kotlin {
+    explicitApi()
+}
+
 configurations.runtimeClasspath {
     exclude("org.jetbrains.kotlin")
     exclude("org.jetbrains.kotlinx")
@@ -115,10 +117,13 @@ tasks.shadowJar {
     archiveClassifier = "plugin"
     from(generateMetadataFile)
     from(rootProject.file("LICENSE.md")) { into("META-INF") }
-    minimize()
     val shadowPackage = "com.xpdustry.flex.shadow"
     kotlinRelocate("com.sksamuel.hoplite", "$shadowPackage.hoplite")
     relocate("org.yaml.snakeyaml", "$shadowPackage.snakeyaml")
+    mergeServiceFiles()
+    minimize {
+        exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
+    }
 }
 
 tasks.register<Copy>("release") {

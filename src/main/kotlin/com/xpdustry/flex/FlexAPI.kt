@@ -25,33 +25,28 @@
  */
 package com.xpdustry.flex
 
-import com.xpdustry.distributor.api.component.Component
+import com.xpdustry.flex.extension.FlexExtension
 import mindustry.Vars
 
-interface FlexAPI {
-    fun findExtension(identifier: String): FlexExtension?
+public interface FlexAPI {
+    public fun findExtension(identifier: String): FlexExtension?
 
-    fun interpolatePipeline(
+    public fun interpolatePipeline(
         context: FlexContext,
         pipeline: String,
-    ): Component?
+    ): String?
 
-    fun interpolatePlaceholder(
+    public fun interpolatePlaceholder(
         context: FlexContext,
         placeholder: String,
-    ): Component?
+    ): String?
 
-    fun interpolateText(
+    public fun interpolateText(
         context: FlexContext,
         text: String,
     ): String
 
-    fun interpolateComponent(
-        context: FlexContext,
-        component: Component,
-    ): Component
-
-    companion object {
-        fun get(): FlexAPI = Vars.mods.getMod(FlexPlugin::class.java).main as FlexAPI
+    public companion object {
+        public fun get(): FlexAPI = Vars.mods.getMod(FlexPlugin::class.java).main as FlexAPI
     }
 }

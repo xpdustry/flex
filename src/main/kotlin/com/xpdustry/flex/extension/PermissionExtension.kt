@@ -23,34 +23,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.extension
 
-import com.xpdustry.distributor.api.DistributorProvider
-import com.xpdustry.distributor.api.audience.PlayerAudience
-import com.xpdustry.distributor.api.component.Component
-import com.xpdustry.distributor.api.component.NumberComponent
-import com.xpdustry.distributor.api.component.TextComponent
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.flex.FlexContext
 
-internal class StandardPlayerExtension(private val plugin: MindustryPlugin) : FlexExtension {
-    override val identifier = "player"
+internal class PermissionExtension(private val plugin: MindustryPlugin) : FlexExtension {
+    override val identifier = "permission"
 
     override fun getPlugin() = plugin
 
     override fun onPlaceholderRequest(
         context: FlexContext,
         query: String,
-    ): Component? {
-        if (context.sender !is PlayerAudience) return null
-        val player = context.sender.player
-        return when (query.lowercase()) {
-            "name_raw" -> TextComponent.text(player.plainName())
-            "name_colored" -> DistributorProvider.get().mindustryComponentDecoder.decode(player.coloredName())
-            "tile_x" -> NumberComponent.number(player.tileX())
-            "tile_y" -> NumberComponent.number(player.tileY())
-            "world_x" -> NumberComponent.number(player.getX())
-            "world_y" -> NumberComponent.number(player.getY())
-            else -> null
-        }
-    }
+    ): String? = if (context.subject.permissions.getPermission(query).asBoolean()) query else null
 }

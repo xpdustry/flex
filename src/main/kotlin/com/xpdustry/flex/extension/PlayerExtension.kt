@@ -23,10 +23,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.extension
 
-internal data class FlexConfig(val pipelines: Map<String, FlexPipeline> = emptyMap())
+import com.xpdustry.distributor.api.audience.PlayerAudience
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.flex.FlexContext
 
-internal typealias FlexPipeline = List<FlexStep>
+internal class PlayerExtension(private val plugin: MindustryPlugin) : FlexExtension {
+    override val identifier = "player"
 
-internal data class FlexStep(val text: String, val filter: FlexFilter = FlexFilter.None)
+    override fun getPlugin() = plugin
+
+    override fun onPlaceholderRequest(
+        context: FlexContext,
+        query: String,
+    ): String? {
+        if (context.subject !is PlayerAudience) return null
+        val player = context.subject.player
+        return when (query.lowercase()) {
+            "name_raw" -> player.plainName()
+            "name_colored" -> player.coloredName()
+            "tile_x" -> player.tileX().toString()
+            "tile_y" -> player.tileY().toString()
+            "world_x" -> player.getX().toString()
+            "world_y" -> player.getY().toString()
+            else -> null
+        }
+    }
+}

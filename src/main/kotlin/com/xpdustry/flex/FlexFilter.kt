@@ -25,26 +25,26 @@
  */
 package com.xpdustry.flex
 
-sealed interface FlexFilter {
-    fun accepts(context: FlexContext): Boolean
+public sealed interface FlexFilter {
+    public fun accepts(context: FlexContext): Boolean
 
-    data class Placeholder(val placeholder: String) : FlexFilter {
-        override fun accepts(context: FlexContext) = FlexAPI.get().interpolatePlaceholder(context, placeholder) != null
+    public data class Placeholder(val placeholder: String) : FlexFilter {
+        override fun accepts(context: FlexContext): Boolean = FlexAPI.get().interpolatePlaceholder(context, placeholder) != null
     }
 
-    data class Any(val filters: List<FlexFilter>) : FlexFilter {
-        override fun accepts(context: FlexContext) = filters.any { it.accepts(context) }
+    public data class Any(val filters: List<FlexFilter>) : FlexFilter {
+        override fun accepts(context: FlexContext): Boolean = filters.any { it.accepts(context) }
     }
 
-    data class And(val filters: List<FlexFilter>) : FlexFilter {
-        override fun accepts(context: FlexContext) = filters.all { it.accepts(context) }
+    public data class And(val filters: List<FlexFilter>) : FlexFilter {
+        override fun accepts(context: FlexContext): Boolean = filters.all { it.accepts(context) }
     }
 
-    data class Not(val filters: List<FlexFilter>) : FlexFilter {
-        override fun accepts(context: FlexContext) = filters.none { it.accepts(context) }
+    public data class Not(val filters: List<FlexFilter>) : FlexFilter {
+        override fun accepts(context: FlexContext): Boolean = filters.none { it.accepts(context) }
     }
 
-    data object None : FlexFilter {
-        override fun accepts(context: FlexContext) = true
+    public data object None : FlexFilter {
+        override fun accepts(context: FlexContext): Boolean = true
     }
 }

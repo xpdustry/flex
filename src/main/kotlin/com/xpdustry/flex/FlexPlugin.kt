@@ -25,62 +25,56 @@
  */
 package com.xpdustry.flex
 
+import arc.util.CommandHandler
 import com.sksamuel.hoplite.ConfigLoader
-import com.sksamuel.hoplite.KebabCaseParamMapper
+import com.sksamuel.hoplite.ExperimentalHoplite
 import com.sksamuel.hoplite.addPathSource
 import com.xpdustry.distributor.api.DistributorProvider
-import com.xpdustry.distributor.api.annotation.EventHandler
-import com.xpdustry.distributor.api.component.Component
-import com.xpdustry.distributor.api.component.ListComponent
-import com.xpdustry.distributor.api.component.ListComponent.components
-import com.xpdustry.distributor.api.component.TextComponent
-import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
-import mindustry.game.EventType
-import mindustry.net.Administration
+import com.xpdustry.distributor.api.plugin.PluginListener
+import com.xpdustry.flex.extension.ArgumentExtension
+import com.xpdustry.flex.extension.FlexExtension
+import com.xpdustry.flex.extension.PermissionExtension
+import com.xpdustry.flex.extension.PlayerExtension
+import kotlin.io.path.notExists
+import kotlin.io.path.outputStream
 
-class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
-    private var config = FlexConfig(emptyMap())
-
-    /*
-    @EventHandler
-    internal fun onPlayerJoin(event: EventType.PlayerJoin) {
-        if (!FLEX_CONNECT_MESSAGES.bool()) return
-        val pipeline = pipelines["mindustry-join"] ?: return logger.warn("Pipeline 'mindustry-join' not found")
-        val components = components()
-        val subject = DistributorProvider.get().audienceProvider.getPlayer(event.player)
-        DistributorProvider.get().audienceProvider.players.audiences.forEach { audience ->
-            val context = FlexContext(subject, audience, KeyContainer.empty())
-            pipeline.steps.forEach { step ->
-                if (step.filter.accepts(context)) components.append(step.text)
-            }
-            audience.sendMessage(interpolate(context, components.build()) { query -> extensions.find { it.identifier == query } })
-        }
-    }
-
-     */
-
-    @EventHandler
-    internal fun onPlayerQuit(event: EventType.PlayerLeave) {
-        if (!FLEX_CONNECT_MESSAGES.bool()) return
-        // val pipeline = pipelines["mindustry-quit"] ?: return logger.warn("Pipeline 'mindustry-quit' not found")
-    }
-
-    override fun onLoad() {
-    }
-
-    fun load() {
+internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
+    private val file = directory.resolve("config.yaml")
+    private var config = FlexConfig()
+    private val processor: PluginAnnotationProcessor<*> = PluginAnnotationProcessor.events(this)
+    private val loader =
         ConfigLoader {
-            withClassLoader(FlexPlugin::class.java.classLoader)
-            addDefaultDecoders()
-            addDefaultPreprocessors()
-            addDefaultParamMappers()
-            addParameterMapper(KebabCaseParamMapper)
-            addDefaultPropertySources()
-            addDefaultParsers() // YamlParser is loaded via ServiceLoader here
-            addPathSource(directory.resolve("config.yaml"))
+            @OptIn(ExperimentalHoplite::class)
+            withExplicitSealedTypes()
+            withClassLoader(javaClass.classLoader)
+            addDefaults()
+            addPathSource(file)
             addDecoder(FlexFilterDecoder())
-            strict()
+        }
+
+    override fun onInit() {
+        reload()
+        addListener(FlexConnectListener())
+        val services = DistributorProvider.get().serviceManager
+        services.register(this, FlexExtension::class.java, ArgumentExtension(this))
+        services.register(this, FlexExtension::class.java, PlayerExtension(this))
+        services.register(this, FlexExtension::class.java, PermissionExtension(this))
+    }
+
+    override fun addListener(listener: PluginListener) {
+        super.addListener(listener)
+        processor.process(listener)
+    }
+
+    override fun onServerCommandsRegistration(handler: CommandHandler) {
+        handler.register<Unit>("flex-reload", "Reloads the flex configuration") { _, _ ->
+            try {
+                reload()
+            } catch (e: Exception) {
+                logger.error("Error while reloading flex configuration", e)
+            }
         }
     }
 
@@ -94,21 +88,21 @@ class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override fun interpolatePipeline(
         context: FlexContext,
         pipeline: String,
-    ): Component? =
+    ): String? =
         config.pipelines[pipeline]?.mapNotNull { step ->
             if (step.filter == null || step.filter.accepts(context)) {
-                interpolateComponent(context, step.text)
+                interpolateText(context, step.text)
             } else {
                 null
             }
         }
             ?.takeIf { it.isNotEmpty() }
-            ?.let(::components)
+            ?.joinToString(separator = "")
 
     override fun interpolatePlaceholder(
         context: FlexContext,
         placeholder: String,
-    ): Component? {
+    ): String? {
         val parts = placeholder.split('_', limit = 1)
         return try {
             findExtension(parts[0])?.onPlaceholderRequest(context, parts[1])
@@ -118,82 +112,53 @@ class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         }
     }
 
-    override fun interpolateComponent(
+    override fun interpolateText(
         context: FlexContext,
-        component: Component,
-    ): Component = when (component) {
-        is ListComponent ->
-            component.toBuilder()
-                .setComponents(component.components.map { interpolateComponent(context, it) })
-                .build()
-        is TextComponent ->
-            component.toBuilder()
-                .setContent()
-                .build()
-        else -> component
+        text: String,
+    ) = buildString {
+        val matches = PLACEHOLDER_REGEX.findAll(text).toList()
+        for (i in matches.indices) {
+            val match = matches[i]
+            append(text.substring(matches.getOrNull(i - 1)?.range?.last ?: 0, match.range.first))
+            val placeholder = match.groupValues[1]
+            if (placeholder.isEmpty()) {
+                append('%')
+            } else {
+                val replacement = interpolatePlaceholder(context, placeholder)
+                if (replacement != null) {
+                    append(replacement)
+                } else {
+                    append('%')
+                    append(match.value)
+                    append('%')
+                }
+            }
+        }
+        val last =
+            matches.lastOrNull()?.range?.last
+                ?: (if (matches.isEmpty()) 0 else text.length)
+        if (last < text.length) {
+            append(text.substring(last))
+        }
     }
 
-    private fun interpolateTextComponent(
-        context: FlexContext,
-        component: TextComponent,
-    ): Component {
-        val output =
-            components()
-                .setTextStyle(component.textStyle)
-        var cursor = 0
-        while (cursor < component.content.length) {
-            val start = component.content.indexOf('%', cursor)
-            if (start == -1) {
-                output.append(text(component.content.substring(cursor)))
-                break
-            }
-            val close = component.content.indexOf('%', start + 1)
-            if (close == -1) {
-                output.append(text(component.content.substring(cursor)))
-                break
-            }
-            val placeholder = component.content.substring(start + 1, close)
-            if (placeholder.isEmpty()) {
-                output.append(text('%'))
-                cursor = close + 1
-                continue
-            }
-            val extension = findExtension(placeholder)
-            if (extension == null) {
-                output.append(text(component.content.substring(cursor, close + 1)))
-                cursor = close + 1
-                continue
-            }
-            val result =
-                try {
-                    extension.onPlaceholderRequest(context, placeholder)
-                } catch (e: Exception) {
-                    output.append(text(component.content.substring(cursor, close + 1)))
-                    cursor = close + 1
-                    // TODO log error
-                    continue
+    private fun reload() {
+        if (file.notExists()) {
+            logger.warn("Configuration file does not exist, creating default configuration")
+            javaClass.classLoader.getResource("com/xpdustry/flex/default.yaml")!!
+                .openStream().buffered()
+                .use { input ->
+                    file.outputStream().buffered()
+                        .use { output -> input.copyTo(output) }
                 }
-            if (result == null) {
-                output.append(text(component.content.substring(cursor, close + 1)))
-                cursor = close + 1
-                continue
-            }
-            output.append(result)
         }
-        return output.build()
+        config = loader.loadConfigOrThrow()
+        config.pipelines.keys.forEach { name ->
+            logger.debug("Loaded pipeline '{}'", name)
+        }
     }
 
     companion object {
-        private val FLEX_CONNECT_MESSAGES: Administration.Config =
-            Administration.Config(
-                "flex-connect-messages",
-                "Whether flex should handle join messages",
-                false,
-                ::onFlexConnectMessagesChange,
-            )
-
-        private fun onFlexConnectMessagesChange() {
-            Administration.Config.showConnectMessages.set(!FLEX_CONNECT_MESSAGES.bool())
-        }
+        private val PLACEHOLDER_REGEX = Regex("%(\\w*)%")
     }
 }

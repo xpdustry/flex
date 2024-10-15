@@ -37,7 +37,7 @@ import com.sksamuel.hoplite.fp.sequence
 import com.sksamuel.hoplite.fp.valid
 import kotlin.reflect.KType
 
-class FlexFilterDecoder : NullHandlingDecoder<FlexFilter> {
+internal class FlexFilterDecoder : NullHandlingDecoder<FlexFilter> {
     override fun supports(type: KType) = type.classifier == FlexFilter::class
 
     override fun safeDecode(
@@ -58,6 +58,7 @@ class FlexFilterDecoder : NullHandlingDecoder<FlexFilter> {
                                 .map { decode(it, type, context) }
                                 .sequence()
                                 .mapInvalid { ConfigFailure.CollectionElementErrors(value, it) }
+
                         else -> decode(value, type, context).map { listOf(it) }
                     }
                 when (key) {

@@ -28,8 +28,4 @@ package com.xpdustry.flex
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.key.KeyContainer
 
-data class FlexContext(
-    val sender: Audience,
-    val target: Audience,
-    val metadata: KeyContainer,
-)
+public data class FlexContext(val subject: Audience, val arguments: KeyContainer)

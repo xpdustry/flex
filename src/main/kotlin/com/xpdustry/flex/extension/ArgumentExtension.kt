@@ -23,10 +23,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.extension
 
-internal data class FlexConfig(val pipelines: Map<String, FlexPipeline> = emptyMap())
+import com.xpdustry.distributor.api.key.Key
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.flex.FlexContext
 
-internal typealias FlexPipeline = List<FlexStep>
+internal class ArgumentExtension(private val plugin: MindustryPlugin) : FlexExtension {
+    override val identifier = "argument"
 
-internal data class FlexStep(val text: String, val filter: FlexFilter = FlexFilter.None)
+    override fun getPlugin() = plugin
+
+    override fun onPlaceholderRequest(
+        context: FlexContext,
+        query: String,
+    ): String? {
+        val parts = query.split("_", limit = 2)
+        if (parts.size != 2) return null
+        val (namespace, name) = parts
+        return context.arguments[Key.of(namespace, name, Any::class.java)]?.toString()
+    }
+}
