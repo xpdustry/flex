@@ -1,3 +1,4 @@
+flex-processing: false
 pipelines:
   mindustry_name:
    - text: "%player:name_colored%"

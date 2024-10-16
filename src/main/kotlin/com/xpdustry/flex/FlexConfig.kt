@@ -25,7 +25,12 @@
  */
 package com.xpdustry.flex
 
-internal data class FlexConfig(val pipelines: Map<String, FlexPipeline> = emptyMap())
+import com.sksamuel.hoplite.ConfigAlias
+
+internal data class FlexConfig(
+    @ConfigAlias("flex-processing") val processing: Boolean = true,
+    val pipelines: Map<String, FlexPipeline> = emptyMap(),
+)
 
 internal typealias FlexPipeline = List<FlexStep>
 

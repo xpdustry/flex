@@ -31,12 +31,9 @@ import com.xpdustry.distributor.api.key.KeyContainer
 import com.xpdustry.distributor.api.plugin.PluginListener
 import mindustry.game.EventType
 import mindustry.gen.Player
-import mindustry.net.Administration
+import java.util.function.Supplier
 
-internal class FlexConnectListener : PluginListener {
-    override fun onPluginInit() {
-        onFlexConnectMessagesChange()
-    }
+internal class FlexConnectListener(private val config: Supplier<FlexConfig>) : PluginListener {
 
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
@@ -52,25 +49,12 @@ internal class FlexConnectListener : PluginListener {
         player: Player,
         pipeline: String,
     ) {
-        if (!FLEX_CONNECT_MESSAGES.bool()) return
+        if (!config.get().processing) return
         val audiences = DistributorProvider.get().audienceProvider
         val context = FlexContext(audiences.getPlayer(player), KeyContainer.empty())
         audiences.players.sendMessage(
-            FlexAPI.get().interpolatePipeline(context, pipeline) ?: return,
+            DistributorProvider.get()
+                .mindustryComponentDecoder.decode(FlexAPI.get().interpolatePipeline(context, pipeline)),
         )
-    }
-
-    companion object {
-        private val FLEX_CONNECT_MESSAGES =
-            Administration.Config(
-                "flexConnectMessages",
-                "Whether flex should handle join messages",
-                true,
-                ::onFlexConnectMessagesChange,
-            )
-
-        private fun onFlexConnectMessagesChange() {
-            Administration.Config.showConnectMessages.set(!FLEX_CONNECT_MESSAGES.bool())
-        }
     }
 }

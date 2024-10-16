@@ -41,8 +41,8 @@ import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
 
 internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
+    private lateinit var config: FlexConfig
     private val file = directory.resolve("config.yaml")
-    private var config = FlexConfig()
     private val processor: PluginAnnotationProcessor<*> = PluginAnnotationProcessor.events(this)
     private val loader =
         ConfigLoader {
@@ -56,7 +56,8 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
 
     override fun onInit() {
         reload()
-        addListener(FlexConnectListener())
+        addListener(FlexConnectListener(::config))
+
         val services = DistributorProvider.get().serviceManager
         services.register(this, FlexExtension::class.java, ArgumentExtension(this))
         services.register(this, FlexExtension::class.java, PlayerExtension(this))
@@ -90,7 +91,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         pipeline: String,
     ): String? =
         config.pipelines[pipeline]?.mapNotNull { step ->
-            if (step.filter == null || step.filter.accepts(context)) {
+            if (step.filter.accepts(context)) {
                 interpolateText(context, step.text)
             } else {
                 null
@@ -103,9 +104,9 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         context: FlexContext,
         placeholder: String,
     ): String? {
-        val parts = placeholder.split('_', limit = 1)
+        val parts = placeholder.split(':', limit = 2)
         return try {
-            findExtension(parts[0])?.onPlaceholderRequest(context, parts[1])
+            findExtension(parts[0])?.onPlaceholderRequest(context, parts.getOrNull(1) ?: "")
         } catch (e: Exception) {
             logger.error("Error while interpolating placeholder '{}'", placeholder, e)
             null
