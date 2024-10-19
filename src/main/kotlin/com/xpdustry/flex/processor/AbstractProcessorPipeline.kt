@@ -23,18 +23,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.extension
+package com.xpdustry.imperium.mindustry.processing
 
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.flex.FlexContext
+import com.xpdustry.distributor.api.util.Priority
+import com.xpdustry.flex.processor.Processor
+import com.xpdustry.flex.processor.ProcessorPipeline
 
-internal class PermissionExtension(private val plugin: MindustryPlugin) : FlexExtension {
-    override val identifier = "permission"
+public abstract class AbstractProcessorPipeline<I : Any, O : Any>(
+    public val plugin: MindustryPlugin,
+    private val identifier: String,
+) : ProcessorPipeline<I, O> {
+    protected val processors: List<Processor<I, O>> get() = inner.map { it.processor }
 
-    override fun getPlugin() = plugin
+    protected fun processor(name: String): Processor<I, O>? = inner.firstOrNull { it.name == name }?.processor
 
-    override fun onPlaceholderRequest(
-        context: FlexContext,
-        query: String,
-    ): String? = if (context.subject.permissions.getPermission(query).asBoolean()) query else null
+    private val inner = mutableListOf<ProcessorWithData>()
+
+    override fun register(
+        name: String,
+        priority: Priority,
+        processor: Processor<I, O>,
+    ) {
+        if (inner.any { it.name == name }) {
+            throw IllegalArgumentException("Processor with name $name already registered")
+        }
+        inner.add(ProcessorWithData(processor, name, priority))
+        inner.sortBy { it.priority }
+        plugin.logger.debug("Registered processor {} to {} with priority {}", name, identifier, priority)
+    }
+
+    private inner class ProcessorWithData(
+        val processor: Processor<I, O>,
+        val name: String,
+        val priority: Priority,
+    )
 }

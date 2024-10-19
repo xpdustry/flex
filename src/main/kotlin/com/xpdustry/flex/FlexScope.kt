@@ -23,24 +23,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.extension
+package com.xpdustry.flex
 
-import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.flex.FlexContext
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import mindustry.Vars
 
-internal class ArgumentExtension(private val plugin: MindustryPlugin) : FlexExtension {
-    override val identifier = "argument"
-
-    override fun getPlugin() = plugin
-
-    override fun onPlaceholderRequest(
-        context: FlexContext,
-        query: String,
-    ): String? {
-        val parts = query.split("_", limit = 2)
-        if (parts.size != 2) return null
-        val (namespace, name) = parts
-        return context.arguments[Key.of(namespace, name, Any::class.java)]?.toString()
-    }
-}
+internal object FlexScope : CoroutineScope by CoroutineScope(
+    Dispatchers.Default +
+        SupervisorJob() +
+        CoroutineName("Flex") +
+        CoroutineExceptionHandler { _, exception ->
+            (Vars.mods.getMod(FlexPlugin::class.java).main as MindustryPlugin).logger.error(
+                "An uncaught error occurred in flex",
+                exception,
+            )
+        },
+)

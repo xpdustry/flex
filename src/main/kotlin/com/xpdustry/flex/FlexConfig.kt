@@ -26,12 +26,9 @@
 package com.xpdustry.flex
 
 import com.sksamuel.hoplite.ConfigAlias
+import com.xpdustry.flex.placeholder.PlaceholderConfig
 
 internal data class FlexConfig(
     @ConfigAlias("flex-processing") val processing: Boolean = true,
-    val pipelines: Map<String, FlexPipeline> = emptyMap(),
+    val placeholders: PlaceholderConfig,
 )
-
-internal typealias FlexPipeline = List<FlexStep>
-
-internal data class FlexStep(val text: String, val filter: FlexFilter = FlexFilter.None)

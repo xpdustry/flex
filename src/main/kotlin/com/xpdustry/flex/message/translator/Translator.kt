@@ -23,28 +23,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.message.translator
 
-public sealed interface FlexFilter {
-    public fun accepts(context: FlexContext): Boolean
+import java.util.Locale
+import java.util.concurrent.CompletableFuture
 
-    public data class Placeholder(val placeholder: String) : FlexFilter {
-        override fun accepts(context: FlexContext): Boolean = FlexAPI.get().interpolatePlaceholder(context, placeholder) != null
+public interface Translator {
+    public fun translate(
+        text: String,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<String>
+
+    public fun isSupportedLanguage(locale: Locale): Boolean
+
+    public object None : Translator {
+        override fun translate(
+            text: String,
+            source: Locale,
+            target: Locale,
+        ): CompletableFuture<String> = CompletableFuture.failedFuture(UnsupportedLanguageException(target))
+
+        override fun isSupportedLanguage(locale: Locale): Boolean = false
     }
 
-    public data class Any(val filters: List<FlexFilter>) : FlexFilter {
-        override fun accepts(context: FlexContext): Boolean = filters.any { it.accepts(context) }
-    }
+    public class UnsupportedLanguageException(public val locale: Locale) : Exception("Unsupported language: $locale")
 
-    public data class And(val filters: List<FlexFilter>) : FlexFilter {
-        override fun accepts(context: FlexContext): Boolean = filters.all { it.accepts(context) }
-    }
-
-    public data class Not(val filters: List<FlexFilter>) : FlexFilter {
-        override fun accepts(context: FlexContext): Boolean = filters.none { it.accepts(context) }
-    }
-
-    public data object None : FlexFilter {
-        override fun accepts(context: FlexContext): Boolean = true
-    }
+    public class RateLimitedException : Exception("Rate limit exceeded")
 }

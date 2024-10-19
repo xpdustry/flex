@@ -23,16 +23,22 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.extension
+package com.xpdustry.flex.processor
 
-import com.xpdustry.distributor.api.plugin.PluginAware
-import com.xpdustry.flex.FlexContext
+import com.xpdustry.distributor.api.util.Priority
+import java.util.concurrent.CompletableFuture
 
-public interface FlexExtension : PluginAware {
-    public val identifier: String
+public interface ProcessorPipeline<I : Any, O : Any> {
+    public fun register(
+        name: String,
+        processor: Processor<I, O>,
+    ): Unit = register(name, Priority.NORMAL, processor)
 
-    public fun onPlaceholderRequest(
-        context: FlexContext,
-        query: String,
-    ): String?
+    public fun register(
+        name: String,
+        priority: Priority,
+        processor: Processor<I, O>,
+    )
+
+    public fun pump(context: I): CompletableFuture<O>
 }

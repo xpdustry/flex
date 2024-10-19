@@ -23,9 +23,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.message.translator
 
-import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.distributor.api.key.KeyContainer
+import com.sksamuel.hoplite.ConfigAlias
+import com.sksamuel.hoplite.Secret
+import java.net.URI
 
-public data class FlexContext(val subject: Audience, val arguments: KeyContainer)
+internal sealed interface TranslatorConfig {
+    data object None : TranslatorConfig
+
+    data class LibreTranslate(
+        @ConfigAlias("lt-endpoint") val endpoint: URI,
+        @ConfigAlias("lt-token") val token: Secret,
+    ) : TranslatorConfig
+
+    data class DeepL(
+        @ConfigAlias("deepl-token") val token: Secret,
+    ) : TranslatorConfig
+}

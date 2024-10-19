@@ -23,16 +23,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.processor
 
-import com.xpdustry.flex.placeholder.PlaceholderPipeline
-import mindustry.Vars
+import arc.Core
+import java.util.concurrent.CompletableFuture
+import java.util.function.Function
 
-public interface FlexAPI {
-    public val placeholders: PlaceholderPipeline
+public fun interface Processor<I : Any, O : Any> {
+    public fun process(context: I): CompletableFuture<O>
 
     public companion object {
         @JvmStatic
-        public fun get(): FlexAPI = Vars.mods.getMod(FlexPlugin::class.java).main as FlexAPI
+        public fun <I : Any, O : Any> simple(process: Function<I, O>): Processor<I, O> =
+            Processor {
+                CompletableFuture.completedFuture(process.apply(it))
+            }
+
+        @JvmStatic
+        public fun <I : Any, O : Any> synchronous(process: Function<I, O>): Processor<I, O> =
+            Processor {
+                CompletableFuture.supplyAsync({ process.apply(it) }, Core.app::post)
+            }
     }
 }

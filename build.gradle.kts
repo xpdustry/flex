@@ -41,11 +41,15 @@ repositories {
 }
 
 dependencies {
+    compileOnly(libs.kotlinx.coroutines.core)
+    compileOnly(libs.kotlinx.coroutines.jdk8)
     compileOnly(toxopid.dependencies.arcCore)
     compileOnly(toxopid.dependencies.mindustryCore)
     compileOnly(libs.distributor.api)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
+    implementation(libs.deepl)
+    implementation(libs.caffeine)
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
 }

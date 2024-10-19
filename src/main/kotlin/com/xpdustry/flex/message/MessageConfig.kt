@@ -23,31 +23,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.extension
+package com.xpdustry.flex.message
 
-import com.xpdustry.distributor.api.audience.PlayerAudience
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.flex.FlexContext
+import com.sksamuel.hoplite.ConfigAlias
 
-internal class PlayerExtension(private val plugin: MindustryPlugin) : FlexExtension {
-    override val identifier = "player"
-
-    override fun getPlugin() = plugin
-
-    override fun onPlaceholderRequest(
-        context: FlexContext,
-        query: String,
-    ): String? {
-        if (context.subject !is PlayerAudience) return null
-        val player = context.subject.player
-        return when (query.lowercase()) {
-            "name_raw" -> player.plainName()
-            "name_colored" -> player.coloredName()
-            "tile_x" -> player.tileX().toString()
-            "tile_y" -> player.tileY().toString()
-            "world_x" -> player.getX().toString()
-            "world_y" -> player.getY().toString()
-            else -> null
-        }
-    }
-}
+internal data class MessageConfig(
+    @ConfigAlias("chat-hook") val chat: Boolean,
+    @ConfigAlias("chat-connect") val connect: Boolean,
+)

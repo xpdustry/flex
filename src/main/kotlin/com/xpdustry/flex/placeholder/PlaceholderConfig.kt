@@ -23,38 +23,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.placeholder
 
-import com.xpdustry.distributor.api.DistributorProvider
-import com.xpdustry.distributor.api.annotation.EventHandler
-import com.xpdustry.distributor.api.key.KeyContainer
-import com.xpdustry.distributor.api.plugin.PluginListener
-import mindustry.game.EventType
-import mindustry.gen.Player
-import java.util.function.Supplier
+internal data class PlaceholderConfig(val presets: Map<String, Preset> = emptyMap()) {
+    internal data class Preset(val steps: List<Step>)
 
-internal class FlexConnectListener(private val config: Supplier<FlexConfig>) : PluginListener {
-
-    @EventHandler
-    internal fun onPlayerJoin(event: EventType.PlayerJoin) {
-        sendConnect(event.player, "mindustry-join")
-    }
-
-    @EventHandler
-    internal fun onPlayerQuit(event: EventType.PlayerLeave) {
-        sendConnect(event.player, "mindustry-quit")
-    }
-
-    private fun sendConnect(
-        player: Player,
-        pipeline: String,
-    ) {
-        if (!config.get().processing) return
-        val audiences = DistributorProvider.get().audienceProvider
-        val context = FlexContext(audiences.getPlayer(player), KeyContainer.empty())
-        audiences.players.sendMessage(
-            DistributorProvider.get()
-                .mindustryComponentDecoder.decode(FlexAPI.get().interpolatePipeline(context, pipeline)),
-        )
-    }
+    internal data class Step(val text: String, val filter: PlaceholderFilter = PlaceholderFilter.None)
 }

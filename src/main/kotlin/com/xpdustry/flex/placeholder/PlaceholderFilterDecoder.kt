@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.placeholder
 
 import com.sksamuel.hoplite.ArrayNode
 import com.sksamuel.hoplite.ConfigFailure
@@ -37,15 +37,15 @@ import com.sksamuel.hoplite.fp.sequence
 import com.sksamuel.hoplite.fp.valid
 import kotlin.reflect.KType
 
-internal class FlexFilterDecoder : NullHandlingDecoder<FlexFilter> {
-    override fun supports(type: KType) = type.classifier == FlexFilter::class
+internal class PlaceholderFilterDecoder(private val pipeline: PlaceholderPipeline) : NullHandlingDecoder<PlaceholderFilter> {
+    override fun supports(type: KType) = type.classifier == PlaceholderFilter::class
 
     override fun safeDecode(
         node: Node,
         type: KType,
         context: DecoderContext,
     ) = when (node) {
-        is StringNode -> FlexFilter.Placeholder(node.value).valid()
+        is StringNode -> PlaceholderFilter.Raw(node.value, pipeline).valid()
         is MapNode ->
             if (node.size != 1) {
                 ConfigFailure.Generic("Expected a single key in map").invalid()
@@ -62,9 +62,9 @@ internal class FlexFilterDecoder : NullHandlingDecoder<FlexFilter> {
                         else -> decode(value, type, context).map { listOf(it) }
                     }
                 when (key) {
-                    "not" -> filters.map(FlexFilter::Not)
-                    "any" -> filters.map(FlexFilter::Any)
-                    "and" -> filters.map(FlexFilter::And)
+                    "not" -> filters.map(PlaceholderFilter::Not)
+                    "any" -> filters.map(PlaceholderFilter::Any)
+                    "and" -> filters.map(PlaceholderFilter::And)
                     else -> ConfigFailure.Generic("Unknown key $key").invalid()
                 }
             }

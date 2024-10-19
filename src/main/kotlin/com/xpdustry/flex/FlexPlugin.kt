@@ -29,39 +29,36 @@ import arc.util.CommandHandler
 import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.ExperimentalHoplite
 import com.sksamuel.hoplite.addPathSource
-import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import com.xpdustry.distributor.api.plugin.PluginListener
-import com.xpdustry.flex.extension.ArgumentExtension
-import com.xpdustry.flex.extension.FlexExtension
-import com.xpdustry.flex.extension.PermissionExtension
-import com.xpdustry.flex.extension.PlayerExtension
+import com.xpdustry.flex.message.FlexConnectMessageHook
+import com.xpdustry.flex.placeholder.PlaceholderFilterDecoder
+import com.xpdustry.flex.placeholder.PlaceholderPipeline
+import com.xpdustry.flex.placeholder.PlaceholderPipelineImpl
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
 
 internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
+    override lateinit var placeholders: PlaceholderPipeline
+    private lateinit var loader: ConfigLoader
     private lateinit var config: FlexConfig
     private val file = directory.resolve("config.yaml")
     private val processor: PluginAnnotationProcessor<*> = PluginAnnotationProcessor.events(this)
-    private val loader =
-        ConfigLoader {
-            @OptIn(ExperimentalHoplite::class)
-            withExplicitSealedTypes()
-            withClassLoader(javaClass.classLoader)
-            addDefaults()
-            addPathSource(file)
-            addDecoder(FlexFilterDecoder())
-        }
 
     override fun onInit() {
+        placeholders = PlaceholderPipelineImpl(this) { this@FlexPlugin.config.placeholders }.also(::addListener)
+        loader =
+            ConfigLoader {
+                @OptIn(ExperimentalHoplite::class)
+                withExplicitSealedTypes()
+                withClassLoader(javaClass.classLoader)
+                addDefaults()
+                addPathSource(file)
+                addDecoder(PlaceholderFilterDecoder(placeholders))
+            }
+        // addListener(FlexConnectMessageHook(::config))
         reload()
-        addListener(FlexConnectListener(::config))
-
-        val services = DistributorProvider.get().serviceManager
-        services.register(this, FlexExtension::class.java, ArgumentExtension(this))
-        services.register(this, FlexExtension::class.java, PlayerExtension(this))
-        services.register(this, FlexExtension::class.java, PermissionExtension(this))
     }
 
     override fun addListener(listener: PluginListener) {
@@ -79,70 +76,6 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         }
     }
 
-    override fun findExtension(identifier: String): FlexExtension? =
-        DistributorProvider.get()
-            .serviceManager
-            .getProviders(FlexExtension::class.java)
-            .find { it.instance.identifier.equals(identifier, ignoreCase = true) }
-            ?.instance
-
-    override fun interpolatePipeline(
-        context: FlexContext,
-        pipeline: String,
-    ): String? =
-        config.pipelines[pipeline]?.mapNotNull { step ->
-            if (step.filter.accepts(context)) {
-                interpolateText(context, step.text)
-            } else {
-                null
-            }
-        }
-            ?.takeIf { it.isNotEmpty() }
-            ?.joinToString(separator = "")
-
-    override fun interpolatePlaceholder(
-        context: FlexContext,
-        placeholder: String,
-    ): String? {
-        val parts = placeholder.split(':', limit = 2)
-        return try {
-            findExtension(parts[0])?.onPlaceholderRequest(context, parts.getOrNull(1) ?: "")
-        } catch (e: Exception) {
-            logger.error("Error while interpolating placeholder '{}'", placeholder, e)
-            null
-        }
-    }
-
-    override fun interpolateText(
-        context: FlexContext,
-        text: String,
-    ) = buildString {
-        val matches = PLACEHOLDER_REGEX.findAll(text).toList()
-        for (i in matches.indices) {
-            val match = matches[i]
-            append(text.substring(matches.getOrNull(i - 1)?.range?.last ?: 0, match.range.first))
-            val placeholder = match.groupValues[1]
-            if (placeholder.isEmpty()) {
-                append('%')
-            } else {
-                val replacement = interpolatePlaceholder(context, placeholder)
-                if (replacement != null) {
-                    append(replacement)
-                } else {
-                    append('%')
-                    append(match.value)
-                    append('%')
-                }
-            }
-        }
-        val last =
-            matches.lastOrNull()?.range?.last
-                ?: (if (matches.isEmpty()) 0 else text.length)
-        if (last < text.length) {
-            append(text.substring(last))
-        }
-    }
-
     private fun reload() {
         if (file.notExists()) {
             logger.warn("Configuration file does not exist, creating default configuration")
@@ -154,12 +87,5 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 }
         }
         config = loader.loadConfigOrThrow()
-        config.pipelines.keys.forEach { name ->
-            logger.debug("Loaded pipeline '{}'", name)
-        }
-    }
-
-    companion object {
-        private val PLACEHOLDER_REGEX = Regex("%(\\w*)%")
     }
 }
