@@ -13,6 +13,7 @@ plugins {
     alias(libs.plugins.shadow)
     alias(libs.plugins.toxopid)
     alias(libs.plugins.ksr)
+    alias(libs.plugins.dokka)
 }
 
 val metadata = ModMetadata.fromJson(rootProject.file("plugin.json"))
@@ -137,6 +138,10 @@ tasks.shadowJar {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency(libs.caffeine.get()))
     }
+}
+
+tasks.javadocJar {
+    from(tasks.dokkaHtml)
 }
 
 tasks.register<Copy>("release") {
