@@ -23,30 +23,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.placeholder
+package com.xpdustry.flex
 
-import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.distributor.api.key.KeyContainer
-import com.xpdustry.flex.processor.ProcessorPipeline
+import com.xpdustry.distributor.api.key.Key
 
-public data class PlaceholderContext
-    @JvmOverloads
-    constructor(
-        val subject: Audience,
-        val query: String,
-        val arguments: KeyContainer = KeyContainer.empty(),
-    )
+public object FlexKeys {
+    @JvmStatic
+    public val MESSAGE: Key<String> = Key.of("flex", "message", String::class.java)
 
-public enum class PlaceholderMode {
-    TEXT,
-    PRESET,
-}
-
-public interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String> {
-    override fun pump(context: PlaceholderContext): String = pump(context, PlaceholderMode.TEXT)
-
-    public fun pump(
-        context: PlaceholderContext,
-        mode: PlaceholderMode,
-    ): String
+    @JvmStatic
+    public val TRANSLATED_MESSAGE: Key<String> = Key.of("flex", "translated_message", String::class.java)
 }

@@ -44,8 +44,16 @@ public data class MessageContext
     }
 
 public interface MessagePipeline : ProcessorPipeline<MessageContext, CompletableFuture<String>> {
-    public fun dispatch(
-        context: MessageContext,
+    public fun chat(
+        sender: Audience,
+        target: Audience,
+        message: String,
+    ): CompletableFuture<Void?> = chat(sender, target, message, "mindustry-chat")
+
+    public fun chat(
+        sender: Audience,
+        target: Audience,
+        message: String,
         preset: String,
     ): CompletableFuture<Void?>
 }

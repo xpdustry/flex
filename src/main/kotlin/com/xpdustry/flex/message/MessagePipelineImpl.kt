@@ -33,6 +33,7 @@ import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.plugin.PluginListener
+import com.xpdustry.flex.FlexKeys
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.placeholder.PlaceholderMode
@@ -83,19 +84,21 @@ internal class MessagePipelineImpl(
             result
         }
 
-    override fun dispatch(
-        context: MessageContext,
+    override fun chat(
+        sender: Audience,
+        target: Audience,
+        message: String,
         preset: String,
     ): CompletableFuture<Void?> =
         FlexScope.future {
-            context.target.audiences.map { target ->
+            target.audiences.map { target ->
                 FlexScope.async {
                     val processed =
                         pump(
                             MessageContext(
-                                context.sender,
+                                sender,
                                 target,
-                                context.message,
+                                message,
                                 MessageContext.Kind.CHAT,
                             ),
                         ).await()
@@ -107,9 +110,9 @@ internal class MessagePipelineImpl(
                     val formatted =
                         placeholders.pump(
                             PlaceholderContext(
-                                context.target,
+                                target,
                                 preset,
-                                MutableKeyContainer.create().apply { set(PlaceholderPipeline.MESSAGE, processed) },
+                                MutableKeyContainer.create().apply { set(FlexKeys.MESSAGE, processed) },
                             ),
                             PlaceholderMode.PRESET,
                         )
@@ -121,7 +124,7 @@ internal class MessagePipelineImpl(
                     target.sendMessage(
                         DistributorProvider.get().mindustryComponentDecoder.decode(formatted),
                         DistributorProvider.get().mindustryComponentDecoder.decode(processed),
-                        context.sender.takeUnless(::isFooClient) ?: Audience.empty(),
+                        sender.takeUnless(::isFooClient) ?: Audience.empty(),
                     )
                 }
             }.awaitAll()

@@ -30,9 +30,7 @@ import arc.util.CommandHandler.ResponseType
 import arc.util.Strings
 import arc.util.Time
 import com.xpdustry.distributor.api.DistributorProvider
-import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.audience.PlayerAudience
-import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
 import kotlinx.coroutines.CompletableDeferred
@@ -40,7 +38,6 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import mindustry.Vars
-import mindustry.game.EventType
 import mindustry.game.EventType.PlayerChatEvent
 import mindustry.gen.SendChatMessageCallPacket
 import mindustry.net.Administration
@@ -54,18 +51,10 @@ internal class FlexChatMessageHook(
     private val messages: MessagePipeline,
     private val config: MessageConfig,
 ) : PluginListener {
-    private val foo = mutableSetOf<MUUID>()
-
     override fun onPluginInit() {
-        Vars.netServer.addPacketHandler("fooCheck") { player, _ -> foo += MUUID.from(player) }
         if (config.chat) {
             Vars.net.handleServer(SendChatMessageCallPacket::class.java, ::interceptChatPacket)
         }
-    }
-
-    @EventHandler
-    fun onPlayerQuit(event: EventType.PlayerLeave) {
-        foo -= MUUID.from(event.player)
     }
 
     private fun interceptChatPacket(
@@ -150,14 +139,10 @@ internal class FlexChatMessageHook(
                 "&lw${Strings.stripColors(result)}",
             )
 
-            messages.dispatch(
-                MessageContext(
-                    audience,
-                    DistributorProvider.get().audienceProvider.players,
-                    result,
-                    MessageContext.Kind.CHAT,
-                ),
-                "mindustry-chat",
+            messages.chat(
+                audience,
+                DistributorProvider.get().audienceProvider.players,
+                result,
             )
         }
     }

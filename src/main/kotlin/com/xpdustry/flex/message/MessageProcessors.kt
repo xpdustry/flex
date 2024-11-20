@@ -30,6 +30,7 @@ import arc.util.Strings
 import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.key.StandardKeys
+import com.xpdustry.flex.FlexKeys
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.placeholder.PlaceholderMode
@@ -94,8 +95,8 @@ internal class TranslationProcessor(
                             context.sender,
                             "translation-format",
                             MutableKeyContainer.create().apply {
-                                set(PlaceholderPipeline.MESSAGE, context.message)
-                                set(PlaceholderPipeline.TRANSLATED_MESSAGE, result)
+                                set(FlexKeys.MESSAGE, context.message)
+                                set(FlexKeys.TRANSLATED_MESSAGE, result)
                             },
                         ),
                         PlaceholderMode.PRESET,
