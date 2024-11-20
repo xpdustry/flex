@@ -48,8 +48,13 @@ dependencies {
     compileOnly(libs.distributor.api)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
-    implementation(libs.deepl)
-    implementation(libs.caffeine)
+    implementation(libs.deepl) {
+        exclude("org.jetbrains", "annotations")
+    }
+    implementation(libs.caffeine) {
+        exclude("org.checkerframework", "checker-qual")
+        exclude("com.google.errorprone", "error_prone_annotations")
+    }
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
 }
@@ -105,8 +110,6 @@ kotlin {
 }
 
 configurations.runtimeClasspath {
-    exclude("org.checkerframework")
-    exclude("org.jetbrains")
     exclude("org.jetbrains.kotlin")
     exclude("org.jetbrains.kotlinx")
 }
@@ -126,6 +129,9 @@ tasks.shadowJar {
     val shadowPackage = "com.xpdustry.flex.shadow"
     kotlinRelocate("com.sksamuel.hoplite", "$shadowPackage.hoplite")
     relocate("org.yaml.snakeyaml", "$shadowPackage.snakeyaml")
+    relocate("com.deepl", "$shadowPackage.deepl")
+    relocate("com.github.benmanes.caffeine", "$shadowPackage.caffeine")
+    relocate("com.google.gson", "$shadowPackage.gson")
     mergeServiceFiles()
     minimize {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
