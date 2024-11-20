@@ -75,7 +75,7 @@ internal object AdminFilterProcessor : Processor<MessageContext, CompletableFutu
 
 internal class TranslationProcessor(
     private val placeholders: PlaceholderPipeline,
-    private val translator: () -> Translator,
+    private val translator: Translator,
 ) : Processor<MessageContext, CompletableFuture<String>> {
     override fun process(context: MessageContext) =
         FlexScope.future {
@@ -86,7 +86,7 @@ internal class TranslationProcessor(
             try {
                 val result =
                     withTimeout(3.seconds) {
-                        translator().translate(raw, sourceLocale, targetLocale).await()
+                        translator.translate(raw, sourceLocale, targetLocale).await()
                     }
                 val formatted =
                     placeholders.pump(

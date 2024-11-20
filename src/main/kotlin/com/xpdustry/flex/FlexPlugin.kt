@@ -25,18 +25,18 @@
  */
 package com.xpdustry.flex
 
-import arc.util.CommandHandler
 import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.addPathSource
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import com.xpdustry.distributor.api.plugin.PluginListener
+import com.xpdustry.flex.message.FlexChatMessageHook
+import com.xpdustry.flex.message.FlexConnectMessageHook
 import com.xpdustry.flex.message.MessagePipeline
 import com.xpdustry.flex.message.MessagePipelineImpl
 import com.xpdustry.flex.placeholder.PlaceholderFilterDecoder
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.PlaceholderPipelineImpl
-import com.xpdustry.flex.translator.CachingTranslator
 import com.xpdustry.flex.translator.DeeplTranslator
 import com.xpdustry.flex.translator.LibreTranslateTranslator
 import com.xpdustry.flex.translator.Translator
@@ -45,17 +45,29 @@ import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
 
 internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
-    override var translator: Translator = Translator.None
     override lateinit var placeholders: PlaceholderPipeline
     override lateinit var messages: MessagePipeline
-
-    private lateinit var loader: ConfigLoader
-    private lateinit var config: FlexConfig
-    private val file = directory.resolve("config.yaml")
-    private val processor: PluginAnnotationProcessor<*> = PluginAnnotationProcessor.events(this)
+    override lateinit var translator: Translator
+    private val processor = PluginAnnotationProcessor.events(this)
 
     override fun onInit() {
-        loader =
+        val config = loadConfig()
+        placeholders = PlaceholderPipelineImpl(this, config.placeholders).also(::addListener)
+        translator = createTranslator(config.translator)
+        messages = MessagePipelineImpl(this, placeholders, translator).also(::addListener)
+        addListener(FlexChatMessageHook(messages, config.messages))
+        addListener(FlexConnectMessageHook(placeholders, config.messages))
+    }
+
+    override fun addListener(listener: PluginListener) {
+        super.addListener(listener)
+        processor.process(listener)
+    }
+
+    private fun loadConfig(): FlexConfig {
+        val file = directory.resolve("config.yaml")
+
+        val loader =
             ConfigLoader {
                 withClassLoader(javaClass.classLoader)
                 addDefaults()
@@ -65,30 +77,6 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 withReportPrintFn(logger::debug)
             }
 
-        reload()
-
-        placeholders = PlaceholderPipelineImpl(this) { this@FlexPlugin.config.placeholders }.also(::addListener)
-        messages = MessagePipelineImpl(this, placeholders) { this@FlexPlugin.translator }.also(::addListener)
-
-        // addListener(FlexConnectMessageHook(::config))
-    }
-
-    override fun addListener(listener: PluginListener) {
-        super.addListener(listener)
-        processor.process(listener)
-    }
-
-    override fun onServerCommandsRegistration(handler: CommandHandler) {
-        handler.register<Unit>("flex-reload", "Reloads the flex configuration") { _, _ ->
-            try {
-                reload()
-            } catch (e: Exception) {
-                logger.error("Error while reloading flex configuration", e)
-            }
-        }
-    }
-
-    private fun reload() {
         if (file.notExists()) {
             logger.warn("Configuration file does not exist, creating default configuration")
             javaClass.classLoader.getResource("com/xpdustry/flex/default.yaml")!!
@@ -98,24 +86,20 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                         .use { output -> input.copyTo(output) }
                 }
         }
-        config = loader.loadConfigOrThrow()
 
-        val previous = translator
-        if (previous is PluginListener) {
-            previous.onPluginExit()
-        }
+        return loader.loadConfigOrThrow()
+    }
 
-        translator =
-            when (val t = config.translator) {
+    private fun createTranslator(config: TranslatorConfig): Translator {
+        val translator =
+            when (config) {
                 is TranslatorConfig.None -> Translator.None
-                is TranslatorConfig.LibreTranslate -> LibreTranslateTranslator(t)
-                is TranslatorConfig.DeepL -> DeeplTranslator(t, metadata.version)
+                is TranslatorConfig.LibreTranslate -> LibreTranslateTranslator(config)
+                is TranslatorConfig.DeepL -> DeeplTranslator(config, metadata.version)
             }
-
         if (translator is PluginListener) {
-            (translator as PluginListener).onPluginInit()
+            addListener(translator as PluginListener)
         }
-
-        translator = CachingTranslator(translator)
+        return Translator.caching(translator)
     }
 }

@@ -25,12 +25,12 @@
  */
 package com.xpdustry.flex
 
-import com.sksamuel.hoplite.ConfigAlias
+import com.xpdustry.flex.message.MessageConfig
 import com.xpdustry.flex.placeholder.PlaceholderConfig
 import com.xpdustry.flex.translator.TranslatorConfig
 
 internal data class FlexConfig(
-    @ConfigAlias("flex-processing") val processing: Boolean = true,
     val translator: TranslatorConfig = TranslatorConfig.None,
     val placeholders: PlaceholderConfig = PlaceholderConfig(),
+    val messages: MessageConfig = MessageConfig(),
 )

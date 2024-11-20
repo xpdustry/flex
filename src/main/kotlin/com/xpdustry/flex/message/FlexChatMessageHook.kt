@@ -50,12 +50,17 @@ import mindustry.net.ValidateException
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.seconds
 
-internal class FlexChatMessageHook(private val messages: MessagePipeline) : PluginListener {
+internal class FlexChatMessageHook(
+    private val messages: MessagePipeline,
+    private val config: MessageConfig,
+) : PluginListener {
     private val foo = mutableSetOf<MUUID>()
 
     override fun onPluginInit() {
         Vars.netServer.addPacketHandler("fooCheck") { player, _ -> foo += MUUID.from(player) }
-        Vars.net.handleServer(SendChatMessageCallPacket::class.java, ::interceptChatPacket)
+        if (config.chat) {
+            Vars.net.handleServer(SendChatMessageCallPacket::class.java, ::interceptChatPacket)
+        }
     }
 
     @EventHandler

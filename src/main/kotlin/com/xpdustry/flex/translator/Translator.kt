@@ -46,4 +46,9 @@ public interface Translator {
 
         override fun isSupportedLanguage(locale: Locale): Boolean = false
     }
+
+    public companion object {
+        @JvmStatic
+        public fun caching(translator: Translator): Translator = CachingTranslator(translator)
+    }
 }

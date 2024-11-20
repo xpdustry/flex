@@ -33,11 +33,10 @@ import com.xpdustry.flex.placeholder.PlaceholderMode
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import mindustry.game.EventType
 import mindustry.gen.Player
-import java.util.function.Supplier
 
 internal class FlexConnectMessageHook(
     private val placeholders: PlaceholderPipeline,
-    private val config: Supplier<MessageConfig>,
+    private val config: MessageConfig,
 ) : PluginListener {
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) = sendConnect(event.player, "mindustry-join")
@@ -49,7 +48,7 @@ internal class FlexConnectMessageHook(
         player: Player,
         pipeline: String,
     ) {
-        if (!config.get().connect) return
+        if (!config.conn) return
         DistributorProvider.get().audienceProvider.players.sendMessage(
             DistributorProvider.get()
                 .mindustryComponentDecoder.decode(

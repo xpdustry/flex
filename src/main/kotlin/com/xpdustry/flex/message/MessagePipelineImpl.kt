@@ -50,7 +50,7 @@ import java.util.concurrent.CompletableFuture
 internal class MessagePipelineImpl(
     plugin: MindustryPlugin,
     private val placeholders: PlaceholderPipeline,
-    private val translator: () -> Translator,
+    private val translator: Translator,
 ) : MessagePipeline,
     PluginListener,
     AbstractProcessorPipeline<MessageContext, CompletableFuture<String>>(plugin, "chat-message") {

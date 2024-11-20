@@ -28,11 +28,10 @@ package com.xpdustry.flex.placeholder
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.processor.AbstractProcessorPipeline
-import java.util.function.Supplier
 
 internal class PlaceholderPipelineImpl(
     plugin: MindustryPlugin,
-    private val config: Supplier<PlaceholderConfig>,
+    private val config: PlaceholderConfig,
 ) : PlaceholderPipeline, PluginListener,
     AbstractProcessorPipeline<PlaceholderContext, String>(plugin, "placeholder") {
     override fun onPluginInit() {
@@ -50,7 +49,7 @@ internal class PlaceholderPipelineImpl(
     }
 
     private fun interpolatePreset(context: PlaceholderContext): String =
-        config.get()
+        config
             .presets[context.query]
             ?.steps
             ?.map { step ->
