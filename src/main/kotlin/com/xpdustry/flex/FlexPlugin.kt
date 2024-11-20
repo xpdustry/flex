@@ -26,6 +26,7 @@
 package com.xpdustry.flex
 
 import com.sksamuel.hoplite.ConfigLoader
+import com.sksamuel.hoplite.KebabCaseParamMapper
 import com.sksamuel.hoplite.addPathSource
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
@@ -75,6 +76,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 addDecoder(PlaceholderFilterDecoder())
                 withReport()
                 withReportPrintFn(logger::debug)
+                addParameterMapper(KebabCaseParamMapper)
             }
 
         if (file.notExists()) {
@@ -82,8 +84,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
             javaClass.classLoader.getResource("com/xpdustry/flex/default.yaml")!!
                 .openStream().buffered()
                 .use { input ->
-                    file.outputStream().buffered()
-                        .use { output -> input.copyTo(output) }
+                    file.outputStream().buffered().use { output -> input.copyTo(output) }
                 }
         }
 

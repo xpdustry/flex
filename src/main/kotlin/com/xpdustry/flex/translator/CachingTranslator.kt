@@ -28,17 +28,19 @@ package com.xpdustry.flex.translator
 import com.github.benmanes.caffeine.cache.AsyncCacheLoader
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Expiry
+import com.github.benmanes.caffeine.cache.Ticker
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
-internal class CachingTranslator(private val translator: Translator) : Translator {
+internal class CachingTranslator(private val translator: Translator, ticker: Ticker = Ticker.systemTicker()) : Translator {
     private val cache =
         Caffeine.newBuilder()
             .expireAfter(TranslationExpiry)
             .maximumSize(1000)
+            .ticker(ticker)
             .buildAsync(TranslationLoader(translator))
 
     override fun translate(
@@ -55,14 +57,6 @@ internal class CachingTranslator(private val translator: Translator) : Translato
             }
 
     override fun isSupportedLanguage(locale: Locale): Boolean = translator.isSupportedLanguage(locale)
-
-    private data class TranslationKey(val text: String, val source: Locale, val target: Locale)
-
-    private sealed interface TranslationResult {
-        data class Success(val translation: String) : TranslationResult
-
-        data class Failure(val throwable: Throwable) : TranslationResult
-    }
 
     private class TranslationLoader(private val translator: Translator) : AsyncCacheLoader<TranslationKey, TranslationResult> {
         override fun asyncLoad(
@@ -103,8 +97,8 @@ internal class CachingTranslator(private val translator: Translator) : Translato
             currentTime: Long,
             currentDuration: Long,
         ) = when (value) {
-            is TranslationResult.Success -> currentTime + FIVE_MINUTES_AS_NANOS
-            is TranslationResult.Failure -> currentTime
+            is TranslationResult.Success -> FIVE_MINUTES_AS_NANOS
+            is TranslationResult.Failure -> currentDuration
         }
     }
 }
