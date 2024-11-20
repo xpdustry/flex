@@ -26,7 +26,6 @@
 package com.xpdustry.flex.processor
 
 import com.xpdustry.distributor.api.util.Priority
-import java.util.concurrent.CompletableFuture
 
 public interface ProcessorPipeline<I : Any, O : Any> {
     public fun register(
@@ -40,5 +39,5 @@ public interface ProcessorPipeline<I : Any, O : Any> {
         processor: Processor<I, O>,
     )
 
-    public fun pump(context: I): CompletableFuture<O>
+    public fun pump(context: I): O
 }

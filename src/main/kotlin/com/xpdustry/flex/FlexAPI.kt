@@ -25,11 +25,15 @@
  */
 package com.xpdustry.flex
 
+import com.xpdustry.flex.message.MessagePipeline
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
+import com.xpdustry.flex.translator.Translator
 import mindustry.Vars
 
 public interface FlexAPI {
     public val placeholders: PlaceholderPipeline
+    public val translator: Translator
+    public val messages: MessagePipeline
 
     public companion object {
         @JvmStatic

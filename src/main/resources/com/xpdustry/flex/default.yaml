@@ -1,16 +1,15 @@
 flex-processing: false
-pipelines:
-  mindustry_name:
-   - text: "%player:name_colored%"
-  mindustry_chat:
-   - text: "[coral][[%player:name_colored%[coral]]:[white] %argument:message%"
-  mindustry_join:
-   - text: "[accent]%player:name_raw% has connected."
-  mindustry_quit:
-   - text: "[accent]%player:name_raw% has disconnected."
-  custom:
-    - if: { and: [ { not: "permission:imperium.admin" }, "name_starts_with_admin"] }
-      text: "[RED]FAKE[]"
-    - if: "permission:imperium.admin"
-      text: "[accent]ADMIN[]"
-    - text: "[accent]%imperium:rank%[] %player:name_raw%: %property:message%"
+placeholders:
+  presets:
+    mindustry_name:
+      steps:
+        - text: "%player:name_colored%"
+    mindustry_chat:
+      steps:
+        - text: "[coral][[%player:name_colored%[coral]]:[white] %argument:message%"
+    mindustry_join:
+      steps:
+        - text: "[accent]%player:name_raw% has connected."
+    mindustry_quit:
+      steps:
+        - text: "[accent]%player:name_raw% has disconnected."

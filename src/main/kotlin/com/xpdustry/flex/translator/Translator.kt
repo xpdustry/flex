@@ -23,29 +23,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message
+package com.xpdustry.flex.translator
 
-import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.flex.processor.ProcessorPipeline
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
-public data class MessageContext
-    @JvmOverloads
-    constructor(
-        val sender: Audience,
-        val target: Audience,
-        val message: String,
-        val kind: Kind = Kind.CHAT,
-    ) {
-        public enum class Kind {
-            CHAT,
-            COMMAND,
-        }
-    }
+public interface Translator {
+    public fun translate(
+        text: String,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<String>
 
-public interface MessagePipeline : ProcessorPipeline<MessageContext, CompletableFuture<String>> {
-    public fun dispatch(
-        context: MessageContext,
-        preset: String,
-    ): CompletableFuture<Void?>
+    public fun isSupportedLanguage(locale: Locale): Boolean
+
+    public object None : Translator {
+        override fun translate(
+            text: String,
+            source: Locale,
+            target: Locale,
+        ): CompletableFuture<String> = CompletableFuture.failedFuture(UnsupportedLanguageException(target))
+
+        override fun isSupportedLanguage(locale: Locale): Boolean = false
+    }
 }

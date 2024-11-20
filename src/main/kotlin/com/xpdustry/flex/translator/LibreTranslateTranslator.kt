@@ -23,10 +23,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message.translator
+package com.xpdustry.flex.translator
 
 import arc.util.serialization.Jval
-import com.xpdustry.distributor.api.collection.MindustryCollections
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
 import kotlinx.coroutines.Dispatchers
@@ -47,7 +46,7 @@ internal class LibreTranslateTranslator(
     private val config: TranslatorConfig.LibreTranslate,
 ) : Translator, PluginListener {
     private val http = HttpClient.newHttpClient()
-    private lateinit var languages: List<SupportedLanguage>
+    private lateinit var languages: Map<String, Set<String>>
 
     override fun onPluginInit() {
         runBlocking { languages = fetchSupportedLanguages() }
@@ -65,11 +64,11 @@ internal class LibreTranslateTranslator(
                 return@future text
             }
 
-            val candidate = languages.firstOrNull { it.code == source.language }
-            if (candidate == null) {
-                throw Translator.UnsupportedLanguageException(source)
-            } else if (target.language !in candidate.targets) {
-                throw Translator.UnsupportedLanguageException(target)
+            val targets = languages[source.language]
+            if (targets == null) {
+                throw UnsupportedLanguageException(source)
+            } else if (target.language !in targets) {
+                throw UnsupportedLanguageException(target)
             }
 
             val uri =
@@ -101,9 +100,9 @@ internal class LibreTranslateTranslator(
             }
         }
 
-    override fun isSupportedLanguage(locale: Locale) = languages.any { it.code == locale.language }
+    override fun isSupportedLanguage(locale: Locale) = locale.language in languages
 
-    private suspend fun fetchSupportedLanguages(): List<SupportedLanguage> {
+    private suspend fun fetchSupportedLanguages(): Map<String, Set<String>> {
         val uri = URI("${config.endpoint}/languages")
 
         val response =
@@ -121,12 +120,10 @@ internal class LibreTranslateTranslator(
         if (response.statusCode() != 200) {
             throw Exception("Failed to fetch supported languages (code=${response.statusCode()})")
         } else {
-            return MindustryCollections.immutableList(json.asArray()).map { entry ->
+            return json.asArray().associate { entry ->
                 val obj = entry.asObject()
-                SupportedLanguage(obj["code"]!!.asString(), obj["targets"]!!.asArray().map(Jval::asString).toSet())
+                obj["code"]!!.asString() to obj["targets"]!!.asArray().map(Jval::asString).toSet()
             }
         }
     }
-
-    data class SupportedLanguage(val code: String, val targets: Set<String>)
 }

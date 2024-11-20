@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message.translator
+package com.xpdustry.flex.translator
 
 import com.deepl.api.Formality
 import com.deepl.api.LanguageType
@@ -71,17 +71,17 @@ internal class DeeplTranslator(config: TranslatorConfig.DeepL, version: String) 
 
         val sourceLocale =
             findClosestLanguage(LanguageType.Source, source)
-                ?: throw Translator.UnsupportedLanguageException(source)
+                ?: throw UnsupportedLanguageException(source)
         val targetLocale =
             findClosestLanguage(LanguageType.Target, target)
-                ?: throw Translator.UnsupportedLanguageException(target)
+                ?: throw UnsupportedLanguageException(target)
 
         if (sourceLocale.language == targetLocale.language) {
             return@future text
         }
 
         if (fetchRateLimited()) {
-            throw Translator.RateLimitedException()
+            throw RateLimitedException()
         }
 
         withContext(Dispatchers.IO) {

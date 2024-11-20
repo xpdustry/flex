@@ -26,8 +26,10 @@
 package com.xpdustry.flex.message
 
 import com.sksamuel.hoplite.ConfigAlias
+import com.xpdustry.flex.translator.TranslatorConfig
 
 internal data class MessageConfig(
     @ConfigAlias("chat-hook") val chat: Boolean,
     @ConfigAlias("chat-connect") val connect: Boolean,
+    val translator: TranslatorConfig = TranslatorConfig.None,
 )

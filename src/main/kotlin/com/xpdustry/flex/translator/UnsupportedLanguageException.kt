@@ -23,21 +23,8 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message.translator
+package com.xpdustry.flex.translator
 
-import com.sksamuel.hoplite.ConfigAlias
-import com.sksamuel.hoplite.Secret
-import java.net.URI
+import java.util.Locale
 
-internal sealed interface TranslatorConfig {
-    data object None : TranslatorConfig
-
-    data class LibreTranslate(
-        @ConfigAlias("lt-endpoint") val endpoint: URI,
-        @ConfigAlias("lt-token") val token: Secret,
-    ) : TranslatorConfig
-
-    data class DeepL(
-        @ConfigAlias("deepl-token") val token: Secret,
-    ) : TranslatorConfig
-}
+public class UnsupportedLanguageException(public val locale: Locale) : Exception("Unsupported language: $locale")

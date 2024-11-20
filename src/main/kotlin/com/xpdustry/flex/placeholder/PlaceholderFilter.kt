@@ -25,44 +25,31 @@
  */
 package com.xpdustry.flex.placeholder
 
-import com.xpdustry.flex.FlexScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.future.future
-import java.util.concurrent.CompletableFuture
+import com.xpdustry.flex.FlexAPI
 
 internal sealed interface PlaceholderFilter {
-    fun accepts(context: PlaceholderContext): CompletableFuture<Boolean>
+    fun accepts(context: PlaceholderContext): Boolean
 
-    data class Raw(val placeholder: String, val pipeline: PlaceholderPipeline) : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext): CompletableFuture<Boolean> =
-            pipeline
-                .pump(context.copy(query = "%$placeholder%"), PlaceholderPipeline.Mode.PLACEHOLDER)
-                .thenApply { it.isNotEmpty() }
+    data class Raw(val placeholder: String) : PlaceholderFilter {
+        override fun accepts(context: PlaceholderContext): Boolean =
+            FlexAPI.get().placeholders
+                .pump(context.copy(query = "%$placeholder%"), PlaceholderMode.TEXT)
+                .isNotEmpty()
     }
 
     data class Any(val filters: List<PlaceholderFilter>) : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext) =
-            FlexScope.future {
-                filters.map { async { it.accepts(context).await() } }.any { it.await() }
-            }
+        override fun accepts(context: PlaceholderContext) = filters.any { it.accepts(context) }
     }
 
     data class And(val filters: List<PlaceholderFilter>) : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext) =
-            FlexScope.future {
-                filters.map { async { it.accepts(context).await() } }.all { it.await() }
-            }
+        override fun accepts(context: PlaceholderContext) = filters.all { it.accepts(context) }
     }
 
     data class Not(val filters: List<PlaceholderFilter>) : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext) =
-            FlexScope.future {
-                filters.map { async { it.accepts(context).await() } }.all { !it.await() }
-            }
+        override fun accepts(context: PlaceholderContext) = filters.none { it.accepts(context) }
     }
 
     data object None : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext): CompletableFuture<Boolean> = CompletableFuture.completedFuture(true)
+        override fun accepts(context: PlaceholderContext): Boolean = true
     }
 }

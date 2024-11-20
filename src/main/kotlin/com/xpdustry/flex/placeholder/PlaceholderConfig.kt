@@ -25,8 +25,13 @@
  */
 package com.xpdustry.flex.placeholder
 
+import com.sksamuel.hoplite.ConfigAlias
+
 internal data class PlaceholderConfig(val presets: Map<String, Preset> = emptyMap()) {
     internal data class Preset(val steps: List<Step>)
 
-    internal data class Step(val text: String, val filter: PlaceholderFilter = PlaceholderFilter.None)
+    internal data class Step(
+        val text: String,
+        @ConfigAlias("if") val filter: PlaceholderFilter = PlaceholderFilter.None,
+    )
 }

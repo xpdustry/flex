@@ -23,31 +23,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message.translator
+package com.xpdustry.flex.translator
 
-import java.util.Locale
-import java.util.concurrent.CompletableFuture
-
-public interface Translator {
-    public fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ): CompletableFuture<String>
-
-    public fun isSupportedLanguage(locale: Locale): Boolean
-
-    public object None : Translator {
-        override fun translate(
-            text: String,
-            source: Locale,
-            target: Locale,
-        ): CompletableFuture<String> = CompletableFuture.failedFuture(UnsupportedLanguageException(target))
-
-        override fun isSupportedLanguage(locale: Locale): Boolean = false
-    }
-
-    public class UnsupportedLanguageException(public val locale: Locale) : Exception("Unsupported language: $locale")
-
-    public class RateLimitedException : Exception("Rate limit exceeded")
-}
+public class RateLimitedException : Exception("Rate limit exceeded")

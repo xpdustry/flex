@@ -23,29 +23,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message
+package com.xpdustry.flex.translator
 
-import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.flex.processor.ProcessorPipeline
-import java.util.concurrent.CompletableFuture
+import com.sksamuel.hoplite.ConfigAlias
+import com.sksamuel.hoplite.Secret
+import java.net.URI
 
-public data class MessageContext
-    @JvmOverloads
-    constructor(
-        val sender: Audience,
-        val target: Audience,
-        val message: String,
-        val kind: Kind = Kind.CHAT,
-    ) {
-        public enum class Kind {
-            CHAT,
-            COMMAND,
-        }
-    }
+internal sealed interface TranslatorConfig {
+    data object None : TranslatorConfig
 
-public interface MessagePipeline : ProcessorPipeline<MessageContext, CompletableFuture<String>> {
-    public fun dispatch(
-        context: MessageContext,
-        preset: String,
-    ): CompletableFuture<Void?>
+    data class LibreTranslate(
+        @ConfigAlias("lt-endpoint") val endpoint: URI,
+        @ConfigAlias("lt-token") val token: Secret,
+    ) : TranslatorConfig
+
+    data class DeepL(
+        @ConfigAlias("deepl-token") val token: Secret,
+    ) : TranslatorConfig
 }

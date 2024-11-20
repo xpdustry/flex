@@ -23,12 +23,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.imperium.mindustry.processing
+package com.xpdustry.flex.processor
 
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.flex.processor.Processor
-import com.xpdustry.flex.processor.ProcessorPipeline
 
 public abstract class AbstractProcessorPipeline<I : Any, O : Any>(
     public val plugin: MindustryPlugin,

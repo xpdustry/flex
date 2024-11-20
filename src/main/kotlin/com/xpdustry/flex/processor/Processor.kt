@@ -30,17 +30,11 @@ import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
 public fun interface Processor<I : Any, O : Any> {
-    public fun process(context: I): CompletableFuture<O>
+    public fun process(context: I): O
 
     public companion object {
         @JvmStatic
-        public fun <I : Any, O : Any> simple(process: Function<I, O>): Processor<I, O> =
-            Processor {
-                CompletableFuture.completedFuture(process.apply(it))
-            }
-
-        @JvmStatic
-        public fun <I : Any, O : Any> synchronous(process: Function<I, O>): Processor<I, O> =
+        public fun <I : Any, O : Any> synchronous(process: Function<I, O>): Processor<I, CompletableFuture<O>> =
             Processor {
                 CompletableFuture.supplyAsync({ process.apply(it) }, Core.app::post)
             }

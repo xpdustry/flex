@@ -31,10 +31,11 @@ import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.flex.FlexScope
-import com.xpdustry.flex.message.translator.Translator
 import com.xpdustry.flex.placeholder.PlaceholderContext
+import com.xpdustry.flex.placeholder.PlaceholderMode
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.processor.Processor
+import com.xpdustry.flex.translator.Translator
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withTimeout
@@ -46,7 +47,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.seconds
 
-internal object AdminFilterProcessor : Processor<MessageContext, String> {
+internal object AdminFilterProcessor : Processor<MessageContext, CompletableFuture<String>> {
     private val logger = LoggerFactory.getLogger(AdminFilterProcessor::class.java)
     private val filtering = AtomicBoolean(false)
 
@@ -74,8 +75,8 @@ internal object AdminFilterProcessor : Processor<MessageContext, String> {
 
 internal class TranslationProcessor(
     private val placeholders: PlaceholderPipeline,
-    private val translator: Translator,
-) : Processor<MessageContext, String> {
+    private val translator: () -> Translator,
+) : Processor<MessageContext, CompletableFuture<String>> {
     override fun process(context: MessageContext) =
         FlexScope.future {
             val sourceLocale = context.sender.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
@@ -85,7 +86,7 @@ internal class TranslationProcessor(
             try {
                 val result =
                     withTimeout(3.seconds) {
-                        translator.translate(raw, sourceLocale, targetLocale).await()
+                        translator().translate(raw, sourceLocale, targetLocale).await()
                     }
                 val formatted =
                     placeholders.pump(
@@ -97,8 +98,8 @@ internal class TranslationProcessor(
                                 set(PlaceholderPipeline.TRANSLATED_MESSAGE, result)
                             },
                         ),
-                        PlaceholderPipeline.Mode.PRESET,
-                    ).await()
+                        PlaceholderMode.PRESET,
+                    )
                 if (raw == result.lowercase()) {
                     context.message
                 } else if (formatted.isBlank()) {

@@ -24,9 +24,8 @@ junit = "5.11.1"
 [libraries]
 # runtime
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutines" }
-# kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutines" }
 kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlin-coroutines" }
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlin-core" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutines" }
 
 # utilities
 distributor-api = { module = "com.xpdustry:distributor-common-api", version.ref = "distributor" }
@@ -47,5 +46,4 @@ indra-git = { id = "net.kyori.indra.git", version.ref = "indra" }
 toxopid = { id = "com.xpdustry.toxopid", version.ref = "toxopid" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-core" }
-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-core" }
 ksr = { id = "com.xpdustry.ksr", version.ref = "ksr" }

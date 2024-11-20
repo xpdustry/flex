@@ -27,38 +27,50 @@ package com.xpdustry.flex
 
 import arc.util.CommandHandler
 import com.sksamuel.hoplite.ConfigLoader
-import com.sksamuel.hoplite.ExperimentalHoplite
 import com.sksamuel.hoplite.addPathSource
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import com.xpdustry.distributor.api.plugin.PluginListener
-import com.xpdustry.flex.message.FlexConnectMessageHook
+import com.xpdustry.flex.message.MessagePipeline
+import com.xpdustry.flex.message.MessagePipelineImpl
 import com.xpdustry.flex.placeholder.PlaceholderFilterDecoder
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.PlaceholderPipelineImpl
+import com.xpdustry.flex.translator.CachingTranslator
+import com.xpdustry.flex.translator.DeeplTranslator
+import com.xpdustry.flex.translator.LibreTranslateTranslator
+import com.xpdustry.flex.translator.Translator
+import com.xpdustry.flex.translator.TranslatorConfig
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
 
 internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
+    override var translator: Translator = Translator.None
     override lateinit var placeholders: PlaceholderPipeline
+    override lateinit var messages: MessagePipeline
+
     private lateinit var loader: ConfigLoader
     private lateinit var config: FlexConfig
     private val file = directory.resolve("config.yaml")
     private val processor: PluginAnnotationProcessor<*> = PluginAnnotationProcessor.events(this)
 
     override fun onInit() {
-        placeholders = PlaceholderPipelineImpl(this) { this@FlexPlugin.config.placeholders }.also(::addListener)
         loader =
             ConfigLoader {
-                @OptIn(ExperimentalHoplite::class)
-                withExplicitSealedTypes()
                 withClassLoader(javaClass.classLoader)
                 addDefaults()
                 addPathSource(file)
-                addDecoder(PlaceholderFilterDecoder(placeholders))
+                addDecoder(PlaceholderFilterDecoder())
+                withReport()
+                withReportPrintFn(logger::debug)
             }
-        // addListener(FlexConnectMessageHook(::config))
+
         reload()
+
+        placeholders = PlaceholderPipelineImpl(this) { this@FlexPlugin.config.placeholders }.also(::addListener)
+        messages = MessagePipelineImpl(this, placeholders) { this@FlexPlugin.translator }.also(::addListener)
+
+        // addListener(FlexConnectMessageHook(::config))
     }
 
     override fun addListener(listener: PluginListener) {
@@ -87,5 +99,23 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 }
         }
         config = loader.loadConfigOrThrow()
+
+        val previous = translator
+        if (previous is PluginListener) {
+            previous.onPluginExit()
+        }
+
+        translator =
+            when (val t = config.translator) {
+                is TranslatorConfig.None -> Translator.None
+                is TranslatorConfig.LibreTranslate -> LibreTranslateTranslator(t)
+                is TranslatorConfig.DeepL -> DeeplTranslator(t, metadata.version)
+            }
+
+        if (translator is PluginListener) {
+            (translator as PluginListener).onPluginInit()
+        }
+
+        translator = CachingTranslator(translator)
     }
 }

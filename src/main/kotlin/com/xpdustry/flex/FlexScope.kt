@@ -33,14 +33,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import mindustry.Vars
 
-internal object FlexScope : CoroutineScope by CoroutineScope(
-    Dispatchers.Default +
-        SupervisorJob() +
-        CoroutineName("Flex") +
-        CoroutineExceptionHandler { _, exception ->
-            (Vars.mods.getMod(FlexPlugin::class.java).main as MindustryPlugin).logger.error(
-                "An uncaught error occurred in flex",
-                exception,
-            )
-        },
-)
+internal val FlexScope =
+    CoroutineScope(
+        Dispatchers.Default +
+            SupervisorJob() +
+            CoroutineName("Flex") +
+            CoroutineExceptionHandler { _, exception ->
+                (Vars.mods.getMod(FlexPlugin::class.java).main as MindustryPlugin)
+                    .logger
+                    .error("An uncaught error occurred", exception)
+            },
+    )

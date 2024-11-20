@@ -28,35 +28,28 @@ package com.xpdustry.flex.placeholder
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.distributor.api.key.KeyContainer
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.distributor.api.plugin.PluginListener
-import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.processor.ProcessorPipeline
-import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.future.future
-import java.util.concurrent.CompletableFuture
-import java.util.function.Supplier
 
 public data class PlaceholderContext
     @JvmOverloads
-    constructor(val subject: Audience, val query: String, val arguments: KeyContainer = KeyContainer.empty())
+    constructor(
+        val subject: Audience,
+        val query: String,
+        val arguments: KeyContainer = KeyContainer.empty(),
+    )
+
+public enum class PlaceholderMode {
+    TEXT,
+    PRESET,
+}
 
 public interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String> {
-    override fun pump(context: PlaceholderContext): CompletableFuture<String> = pump(context, Mode.PLACEHOLDER)
+    override fun pump(context: PlaceholderContext): String = pump(context, PlaceholderMode.TEXT)
 
     public fun pump(
         context: PlaceholderContext,
-        mode: Mode,
-    ): CompletableFuture<String>
-
-    public enum class Mode {
-        PRESET,
-        PLACEHOLDER,
-    }
+        mode: PlaceholderMode,
+    ): String
 
     public companion object {
         @JvmStatic
@@ -64,105 +57,5 @@ public interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, Str
 
         @JvmStatic
         public val TRANSLATED_MESSAGE: Key<String> = Key.of("flex", "translated_message", String::class.java)
-    }
-}
-
-internal class PlaceholderPipelineImpl(
-    plugin: MindustryPlugin,
-    private val config: Supplier<PlaceholderConfig>,
-) : PlaceholderPipeline, PluginListener,
-    AbstractProcessorPipeline<PlaceholderContext, String>(plugin, "placeholder") {
-    override fun onPluginInit() {
-        register("argument", ArgumentProcessor)
-        register("player", PlayerProcessor)
-        register("permission", PermissionProcessor)
-    }
-
-    override fun pump(
-        context: PlaceholderContext,
-        mode: PlaceholderPipeline.Mode,
-    ) = FlexScope.future {
-        when (mode) {
-            PlaceholderPipeline.Mode.PRESET -> interpolatePreset(context)
-            PlaceholderPipeline.Mode.PLACEHOLDER -> interpolateText(context, context.query)
-        }
-    }
-
-    private suspend fun interpolatePreset(context: PlaceholderContext): String =
-        coroutineScope {
-            config.get()
-                .presets[context.query]
-                ?.steps
-                ?.map { step ->
-                    async {
-                        val accepted =
-                            try {
-                                step.filter.accepts(context).await()
-                            } catch (e: Exception) {
-                                plugin.logger.error("Error while interpolating preset '{}'", context.query, e)
-                                return@async null
-                            }
-                        if (accepted) {
-                            interpolateText(context, step.text)
-                        } else {
-                            null
-                        }
-                    }
-                }
-                ?.awaitAll()
-                ?.filterNotNull()
-                ?.takeIf { it.isNotEmpty() }
-                ?.joinToString(separator = "")
-                ?: ""
-        }
-
-    private suspend fun interpolateText(
-        context: PlaceholderContext,
-        text: String,
-    ) = buildString {
-        val matches = PLACEHOLDER_REGEX.findAll(text).toList()
-        for (i in matches.indices) {
-            val match = matches[i]
-            append(text.substring(matches.getOrNull(i - 1)?.range?.last ?: 0, match.range.first))
-            val placeholder = match.groupValues[1]
-            if (placeholder.isEmpty()) {
-                append('%')
-            } else {
-                val replacement = interpolatePlaceholder(context, placeholder)
-                if (replacement != null) {
-                    append(replacement)
-                } else {
-                    append('%')
-                    append(match.value)
-                    append('%')
-                }
-            }
-        }
-        val last =
-            matches.lastOrNull()?.range?.last
-                ?: (if (matches.isEmpty()) 0 else text.length)
-        if (last < text.length) {
-            append(text.substring(last))
-        }
-    }
-
-    private suspend fun interpolatePlaceholder(
-        context: PlaceholderContext,
-        placeholder: String,
-    ): String? {
-        val parts = placeholder.split(':', limit = 2)
-        return try {
-            processor(parts[0])
-                ?.process(context.copy(query = parts.getOrNull(1) ?: ""))
-                ?.await()
-                ?.takeIf { it.isNotEmpty() }
-        } catch (e: Exception) {
-            plugin.logger.error("Error while interpolating placeholder '{}'", placeholder, e)
-            null
-        }
-    }
-
-    companion object {
-        private val PLACEHOLDER_REGEX = Regex("%(\\w*)%")
     }
 }

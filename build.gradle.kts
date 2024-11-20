@@ -105,6 +105,8 @@ kotlin {
 }
 
 configurations.runtimeClasspath {
+    exclude("org.checkerframework")
+    exclude("org.jetbrains")
     exclude("org.jetbrains.kotlin")
     exclude("org.jetbrains.kotlinx")
 }
@@ -127,6 +129,7 @@ tasks.shadowJar {
     mergeServiceFiles()
     minimize {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
+        exclude(dependency(libs.caffeine.get()))
     }
 }
 

@@ -28,11 +28,9 @@ package com.xpdustry.flex.message
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.plugin.PluginListener
-import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.placeholder.PlaceholderContext
+import com.xpdustry.flex.placeholder.PlaceholderMode
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
 import java.util.function.Supplier
@@ -42,18 +40,12 @@ internal class FlexConnectMessageHook(
     private val config: Supplier<MessageConfig>,
 ) : PluginListener {
     @EventHandler
-    internal fun onPlayerJoin(event: EventType.PlayerJoin) =
-        FlexScope.launch {
-            sendConnect(event.player, "mindustry-join")
-        }
+    internal fun onPlayerJoin(event: EventType.PlayerJoin) = sendConnect(event.player, "mindustry-join")
 
     @EventHandler
-    internal fun onPlayerQuit(event: EventType.PlayerLeave) =
-        FlexScope.launch {
-            sendConnect(event.player, "mindustry-quit")
-        }
+    internal fun onPlayerQuit(event: EventType.PlayerLeave) = sendConnect(event.player, "mindustry-quit")
 
-    private suspend fun sendConnect(
+    private fun sendConnect(
         player: Player,
         pipeline: String,
     ) {
@@ -63,8 +55,8 @@ internal class FlexConnectMessageHook(
                 .mindustryComponentDecoder.decode(
                     placeholders.pump(
                         PlaceholderContext(DistributorProvider.get().audienceProvider.getPlayer(player), pipeline),
-                        PlaceholderPipeline.Mode.PRESET,
-                    ).await(),
+                        PlaceholderMode.PRESET,
+                    ),
                 ),
         )
     }

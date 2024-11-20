@@ -31,18 +31,14 @@ import arc.util.Strings
 import arc.util.Time
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
-import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.audience.PlayerAudience
-import com.xpdustry.distributor.api.key.MutableKeyContainer
-import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
-import com.xpdustry.flex.placeholder.PlaceholderContext
-import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.game.EventType.PlayerChatEvent
@@ -52,11 +48,9 @@ import mindustry.net.NetConnection
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 import org.slf4j.LoggerFactory
+import kotlin.time.Duration.Companion.seconds
 
-internal class FlexChatMessageHook(
-    private val placeholders: PlaceholderPipeline,
-    private val messages: MessagePipeline,
-) : PluginListener {
+internal class FlexChatMessageHook(private val messages: MessagePipeline) : PluginListener {
     private val foo = mutableSetOf<MUUID>()
 
     override fun onPluginInit() {
@@ -105,7 +99,7 @@ internal class FlexChatMessageHook(
         message = message.replace("\n", "")
         DistributorProvider.get().eventBus.post(PlayerChatEvent(audience.player, message))
 
-        FlexScope.launch server@{
+        FlexScope.launch {
             val isCommand = message.startsWith(Vars.netServer.clientCommands.getPrefix())
             val result =
                 messages.pump(
@@ -118,17 +112,17 @@ internal class FlexChatMessageHook(
                 ).await()
 
             if (result.isBlank()) {
-                return@server
+                return@launch
             } else if (isCommand) {
                 ROOT_LOGGER.info("<&fi{}: {}&fr>", "&lk${audience.player.plainName()}", "&lw$result")
             }
 
-            val resume = CompletableDeferred<Boolean>()
+            val hadCommand = CompletableDeferred<Boolean>()
             Core.app.post {
                 // check if it's a command
                 val response = Vars.netServer.clientCommands.handleMessage(result, audience.player)
                 if (response.type == ResponseType.noCommand) { // no command to handle
-                    resume.complete(true)
+                    hadCommand.complete(false)
                 } else {
                     // a command was sent, now get the output
                     if (response.type != ResponseType.valid) {
@@ -137,12 +131,12 @@ internal class FlexChatMessageHook(
                             audience.player.sendMessage(text)
                         }
                     }
-                    resume.complete(false)
+                    hadCommand.complete(true)
                 }
             }
 
-            if (!resume.await()) {
-                return@server
+            if (withTimeoutOrNull(3.seconds) { hadCommand.await() } == true) {
+                return@launch
             }
 
             ROOT_LOGGER.info(
@@ -151,47 +145,17 @@ internal class FlexChatMessageHook(
                 "&lw${Strings.stripColors(result)}",
             )
 
-            DistributorProvider.get().audienceProvider.players.audiences.forEach { target ->
-                launch player@{
-                    val processed =
-                        messages.pump(
-                            MessageContext(
-                                audience,
-                                target,
-                                message,
-                                MessageContext.Kind.CHAT,
-                            ),
-                        ).await()
-
-                    if (processed.isBlank()) {
-                        return@player
-                    }
-
-                    val formatted =
-                        placeholders.pump(
-                            PlaceholderContext(
-                                audience,
-                                "mindustry-chat",
-                                MutableKeyContainer.create().apply { set(PlaceholderPipeline.MESSAGE, message) },
-                            ),
-                            PlaceholderPipeline.Mode.PRESET,
-                        ).await()
-
-                    if (formatted.isBlank()) {
-                        return@player
-                    }
-
-                    target.sendMessage(
-                        DistributorProvider.get().mindustryComponentDecoder.decode(formatted),
-                        DistributorProvider.get().mindustryComponentDecoder.decode(processed),
-                        audience.takeUnless(::isFooClient) ?: Audience.empty(),
-                    )
-                }
-            }
+            messages.dispatch(
+                MessageContext(
+                    audience,
+                    DistributorProvider.get().audienceProvider.players,
+                    result,
+                    MessageContext.Kind.CHAT,
+                ),
+                "mindustry-chat",
+            )
         }
     }
-
-    private fun isFooClient(audience: Audience) = audience.metadata[StandardKeys.MUUID]?.let { foo.contains(it) } ?: false
 
     companion object {
         private val ROOT_LOGGER = LoggerFactory.getLogger("ROOT")

@@ -37,7 +37,7 @@ import com.sksamuel.hoplite.fp.sequence
 import com.sksamuel.hoplite.fp.valid
 import kotlin.reflect.KType
 
-internal class PlaceholderFilterDecoder(private val pipeline: PlaceholderPipeline) : NullHandlingDecoder<PlaceholderFilter> {
+internal class PlaceholderFilterDecoder : NullHandlingDecoder<PlaceholderFilter> {
     override fun supports(type: KType) = type.classifier == PlaceholderFilter::class
 
     override fun safeDecode(
@@ -45,7 +45,7 @@ internal class PlaceholderFilterDecoder(private val pipeline: PlaceholderPipelin
         type: KType,
         context: DecoderContext,
     ) = when (node) {
-        is StringNode -> PlaceholderFilter.Raw(node.value, pipeline).valid()
+        is StringNode -> PlaceholderFilter.Raw(node.value).valid()
         is MapNode ->
             if (node.size != 1) {
                 ConfigFailure.Generic("Expected a single key in map").invalid()
