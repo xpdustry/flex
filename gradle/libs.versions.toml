@@ -15,7 +15,7 @@ ksr = "1.0.0"
 slf4md = "1.0.1"
 distributor = "4.0.0-rc.2"
 hoplite = "2.8.2"
-deepl = "1.6.0"
+deepl = "1.7.0"
 caffeine = "3.1.8"
 
 # testing
