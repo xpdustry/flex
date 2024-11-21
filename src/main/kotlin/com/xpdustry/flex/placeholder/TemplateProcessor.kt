@@ -25,38 +25,44 @@
  */
 package com.xpdustry.flex.placeholder
 
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.flex.processor.AbstractPriorityProcessorPipeline
-import java.util.regex.Pattern
+import com.sksamuel.hoplite.ConfigAlias
+import com.xpdustry.flex.processor.Processor
+import org.slf4j.LoggerFactory
 
-internal class PlaceholderPipelineImpl(
-    plugin: MindustryPlugin,
-) : PlaceholderPipeline, AbstractPriorityProcessorPipeline<PlaceholderContext, String>(plugin, "placeholder") {
-    override fun pump(context: PlaceholderContext): String {
-        val builder = StringBuilder()
-        val matcher = PLACEHOLDER_REGEX.matcher(context.query)
-        while (matcher.find()) {
-            val name = matcher.group("name")
-            val replacement =
-                try {
-                    processors[name]
-                        ?.process(context.copy(query = matcher.group("query") ?: ""))
-                        ?.takeIf { it.isNotEmpty() }
-                } catch (e: Exception) {
-                    plugin.logger.error("Error while interpolating placeholder '{}'", name, e)
+internal typealias TemplateConfig = Map<String, Template>
+
+internal typealias Template = List<Step>
+
+internal data class Step(
+    val text: String,
+    @ConfigAlias("if") val filter: PlaceholderFilter = PlaceholderFilter.None,
+)
+
+internal class TemplateProcessor(private val placeholders: PlaceholderPipeline) : Processor<PlaceholderContext, String> {
+    internal var config: TemplateConfig = emptyMap()
+
+    override fun process(context: PlaceholderContext) =
+        config[context.query]
+            ?.map { step ->
+                val accepted =
+                    try {
+                        step.filter.accepts(context)
+                    } catch (e: Exception) {
+                        logger.error("Error while processing template '{}'", context.query, e)
+                        return@map null
+                    }
+                if (accepted) {
+                    placeholders.pump(context.copy(query = step.text))
+                } else {
                     null
                 }
-            if (replacement != null) {
-                matcher.appendReplacement(builder, replacement)
-            } else {
-                matcher.appendReplacement(builder, matcher.group())
             }
-        }
-        matcher.appendTail(builder)
-        return builder.toString()
-    }
+            ?.filterNotNull()
+            ?.takeIf { it.isNotEmpty() }
+            ?.joinToString(separator = "")
+            ?: ""
 
     companion object {
-        private val PLACEHOLDER_REGEX = Pattern.compile("%(?<name>\\w*)(:(?<query>\\w*)?)?%")
+        private val logger = LoggerFactory.getLogger(TemplateProcessor::class.java)
     }
 }

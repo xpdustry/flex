@@ -42,12 +42,13 @@ internal val PlayerProcessor =
         if (ctx.subject !is PlayerAudience) return@Processor ""
         val player = ctx.subject.player
         when (ctx.query.lowercase()) {
-            "name_raw" -> player.plainName()
-            "name_colored" -> player.coloredName()
+            "name" -> player.info.lastName
+            "name_raw" -> player.info.plainLastName()
             "tile_x" -> player.tileX().toString()
             "tile_y" -> player.tileY().toString()
             "world_x" -> player.getX().toString()
             "world_y" -> player.getY().toString()
+            "color" -> String.format("#%06X", player.color().rgb888())
             else -> ""
         }
     }

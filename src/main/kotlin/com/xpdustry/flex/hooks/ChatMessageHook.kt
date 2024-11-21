@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message
+package com.xpdustry.flex.hooks
 
 import arc.Core
 import arc.util.CommandHandler.ResponseType
@@ -33,10 +33,10 @@ import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
-import kotlinx.coroutines.CompletableDeferred
+import com.xpdustry.flex.message.MessageContext
+import com.xpdustry.flex.message.MessagePipeline
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
 import mindustry.gen.SendChatMessageCallPacket
@@ -45,14 +45,13 @@ import mindustry.net.NetConnection
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 import org.slf4j.LoggerFactory
-import kotlin.time.Duration.Companion.seconds
 
-internal class FlexChatMessageHook(
+internal class ChatMessageHook(
     private val messages: MessagePipeline,
-    private val config: MessageConfig,
+    private val hooks: HooksConfig,
 ) : PluginListener {
     override fun onPluginInit() {
-        if (config.chat) {
+        if (hooks.chat) {
             Vars.net.handleServer(SendChatMessageCallPacket::class.java, ::interceptChatPacket)
         }
     }
@@ -95,7 +94,7 @@ internal class FlexChatMessageHook(
 
         FlexScope.launch {
             val isCommand = message.startsWith(Vars.netServer.clientCommands.getPrefix())
-            val result =
+            val forServer =
                 messages.pump(
                     MessageContext(
                         audience,
@@ -105,44 +104,31 @@ internal class FlexChatMessageHook(
                     ),
                 ).await()
 
-            if (result.isBlank()) {
+            if (forServer.isBlank()) {
                 return@launch
-            } else if (isCommand) {
-                ROOT_LOGGER.info("<&fi{}: {}&fr>", "&lk${audience.player.plainName()}", "&lw$result")
             }
 
-            val hadCommand = CompletableDeferred<Boolean>()
-            Core.app.post {
-                // check if it's a command
-                val response = Vars.netServer.clientCommands.handleMessage(result, audience.player)
-                if (response.type == ResponseType.noCommand) { // no command to handle
-                    hadCommand.complete(false)
-                } else {
-                    // a command was sent, now get the output
-                    if (response.type != ResponseType.valid) {
-                        val text = Vars.netServer.invalidHandler.handle(audience.player, response)
-                        if (text != null) {
-                            audience.player.sendMessage(text)
+            if (isCommand) {
+                ROOT_LOGGER.info("<&fi{}: {}&fr>", "&lk${audience.player.plainName()}", "&lw$forServer")
+                Core.app.post {
+                    val response = Vars.netServer.clientCommands.handleMessage(forServer, audience.player)
+                    when (response.type) {
+                        ResponseType.valid -> Unit
+                        else -> {
+                            val text = Vars.netServer.invalidHandler.handle(audience.player, response)
+                            if (text != null) audience.player.sendMessage(text)
                         }
                     }
-                    hadCommand.complete(true)
                 }
-            }
-
-            if (withTimeoutOrNull(3.seconds) { hadCommand.await() } == true) {
                 return@launch
             }
 
-            ROOT_LOGGER.info(
-                "&fi{}: {}",
-                "&lc${audience.player.plainName()}",
-                "&lw${Strings.stripColors(result)}",
-            )
+            ROOT_LOGGER.info("&fi{}: {}", "&lc${audience.player.plainName()}", "&lw${Strings.stripColors(forServer)}")
 
-            messages.chat(
+            messages.broadcast(
                 audience,
                 DistributorProvider.get().audienceProvider.players,
-                result,
+                message,
             )
         }
     }

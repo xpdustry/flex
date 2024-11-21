@@ -33,11 +33,11 @@ internal sealed interface TranslatorConfig {
     data object None : TranslatorConfig
 
     data class LibreTranslate(
-        @ConfigAlias("lt-endpoint") val endpoint: URI,
-        @ConfigAlias("lt-token") val token: Secret,
+        @ConfigAlias("lt-endpoint") val ltEndpoint: URI,
+        @ConfigAlias("lt-token") val ltToken: Secret,
     ) : TranslatorConfig
 
     data class DeepL(
-        @ConfigAlias("deepl-token") val token: Secret,
+        @ConfigAlias("deepl-token") val deeplToken: Secret,
     ) : TranslatorConfig
 }

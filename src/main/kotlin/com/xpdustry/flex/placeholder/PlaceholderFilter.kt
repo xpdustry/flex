@@ -33,7 +33,7 @@ internal sealed interface PlaceholderFilter {
     data class Raw(val placeholder: String) : PlaceholderFilter {
         override fun accepts(context: PlaceholderContext): Boolean =
             FlexAPI.get().placeholders
-                .pump(context.copy(query = "%$placeholder%"), PlaceholderMode.TEXT)
+                .pump(context.copy(query = "%$placeholder%"))
                 .isNotEmpty()
     }
 

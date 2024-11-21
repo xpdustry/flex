@@ -42,7 +42,7 @@ internal class DeeplTranslator(config: TranslatorConfig.DeepL, version: String) 
     Translator, PluginListener {
     private val translator =
         com.deepl.api.Translator(
-            config.token.value,
+            config.deeplToken.value,
             TranslatorOptions()
                 .setTimeout(Duration.ofSeconds(3L))
                 .setAppInfo("Flex", version),

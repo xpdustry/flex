@@ -1,14 +1,9 @@
-placeholders:
-  presets:
-    mindustry_name:
-      steps:
-        - text: "%player:name_colored%"
-    mindustry_chat:
-      steps:
-        - text: "[coral][[%player:name_colored%[coral]]:[white] %argument:message%"
-    mindustry_join:
-      steps:
-        - text: "[accent]%player:name_raw% has connected."
-    mindustry_quit:
-      steps:
-        - text: "[accent]%player:name_raw% has disconnected."
+templates:
+  mindustry_name:
+    - text: "[%player:color%]%player:name%"
+  mindustry_chat:
+    - text: "[coral][[[%player:color%]%player:name%[coral]]:[white] %argument:flex_message%"
+  mindustry_join:
+    - text: "[accent]%player:name_raw% has connected."
+  mindustry_quit:
+    - text: "[accent]%player:name_raw% has disconnected."

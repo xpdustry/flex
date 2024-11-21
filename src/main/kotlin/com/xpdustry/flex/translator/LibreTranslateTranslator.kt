@@ -73,11 +73,11 @@ internal class LibreTranslateTranslator(
 
             val uri =
                 URI(
-                    "${config.endpoint}/translate" +
+                    "${config.ltEndpoint}/translate" +
                         "?q=${URLEncoder.encode(text, Charset.defaultCharset())}" +
                         "&source=${source.language}" +
                         "&target=${target.language}" +
-                        "&api_key=${config.token.value}" +
+                        "&api_key=${config.ltToken.value}" +
                         "&format=text",
                 )
 
@@ -103,7 +103,7 @@ internal class LibreTranslateTranslator(
     override fun isSupportedLanguage(locale: Locale) = locale.language in languages
 
     private suspend fun fetchSupportedLanguages(): Map<String, Set<String>> {
-        val uri = URI("${config.endpoint}/languages")
+        val uri = URI("${config.ltEndpoint}/languages")
 
         val response =
             withContext(Dispatchers.IO) {

@@ -27,33 +27,33 @@ package com.xpdustry.flex.processor
 
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 
-public abstract class AbstractProcessorPipeline<I : Any, O : Any>(
+public abstract class AbstractPriorityProcessorPipeline<I : Any, O : Any>(
     public val plugin: MindustryPlugin,
     private val identifier: String,
-) : ProcessorPipeline<I, O> {
-    protected val processors: List<Processor<I, O>> get() = inner.map { it.processor }
-
-    protected fun processor(name: String): Processor<I, O>? = inner.firstOrNull { it.name == name }?.processor
-
-    private val inner = mutableListOf<ProcessorWithData>()
+) : PriorityProcessorPipeline<I, O> {
+    private val _processors = ConcurrentHashMap<String, PriorityProcessor>()
+    public val processors: Map<String, PriorityProcessor> get() = Collections.unmodifiableMap(_processors)
 
     override fun register(
         name: String,
         priority: Priority,
         processor: Processor<I, O>,
     ) {
-        if (inner.any { it.name == name }) {
+        if (_processors.containsKey(name)) {
             throw IllegalArgumentException("Processor with name $name already registered")
         }
-        inner.add(ProcessorWithData(processor, name, priority))
-        inner.sortBy { it.priority }
+        val wrapped = PriorityProcessor(processor, priority)
+        _processors[name] = wrapped
         plugin.logger.debug("Registered processor {} to {} with priority {}", name, identifier, priority)
     }
 
-    private inner class ProcessorWithData(
-        val processor: Processor<I, O>,
-        val name: String,
-        val priority: Priority,
-    )
+    public inner class PriorityProcessor(
+        delegate: Processor<I, O>,
+        public val priority: Priority,
+    ) : Processor<I, O> by delegate, Comparable<PriorityProcessor> {
+        override fun compareTo(other: PriorityProcessor): Int = priority.compareTo(other.priority)
+    }
 }

@@ -25,19 +25,28 @@
  */
 package com.xpdustry.flex
 
+import arc.util.CommandHandler
 import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.KebabCaseParamMapper
 import com.sksamuel.hoplite.addPathSource
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import com.xpdustry.distributor.api.plugin.PluginListener
-import com.xpdustry.flex.message.FlexChatMessageHook
-import com.xpdustry.flex.message.FlexConnectMessageHook
+import com.xpdustry.distributor.api.util.Priority
+import com.xpdustry.flex.hooks.ChatMessageHook
+import com.xpdustry.flex.hooks.ConnectionNotificationHook
+import com.xpdustry.flex.hooks.PlayerNameHook
+import com.xpdustry.flex.message.AdminFilterProcessor
 import com.xpdustry.flex.message.MessagePipeline
 import com.xpdustry.flex.message.MessagePipelineImpl
+import com.xpdustry.flex.message.TranslationProcessor
+import com.xpdustry.flex.placeholder.ArgumentProcessor
+import com.xpdustry.flex.placeholder.PermissionProcessor
 import com.xpdustry.flex.placeholder.PlaceholderFilterDecoder
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.PlaceholderPipelineImpl
+import com.xpdustry.flex.placeholder.PlayerProcessor
+import com.xpdustry.flex.placeholder.TemplateProcessor
 import com.xpdustry.flex.translator.DeeplTranslator
 import com.xpdustry.flex.translator.LibreTranslateTranslator
 import com.xpdustry.flex.translator.Translator
@@ -50,14 +59,40 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override lateinit var messages: MessagePipeline
     override lateinit var translator: Translator
     private val processor = PluginAnnotationProcessor.events(this)
+    private lateinit var templates: TemplateProcessor
 
     override fun onInit() {
         val config = loadConfig()
-        placeholders = PlaceholderPipelineImpl(this, config.placeholders).also(::addListener)
+
         translator = createTranslator(config.translator)
-        messages = MessagePipelineImpl(this, placeholders, translator).also(::addListener)
-        addListener(FlexChatMessageHook(messages, config.messages))
-        addListener(FlexConnectMessageHook(placeholders, config.messages))
+
+        placeholders = PlaceholderPipelineImpl(this)
+        templates = TemplateProcessor(placeholders)
+        templates.config = config.templates
+        placeholders.register("template", templates)
+        placeholders.register("argument", ArgumentProcessor)
+        placeholders.register("player", PlayerProcessor)
+        placeholders.register("permission", PermissionProcessor)
+
+        messages = MessagePipelineImpl(this, placeholders).also(::addListener)
+        messages.register("admin_filter", Priority.HIGH, AdminFilterProcessor)
+        messages.register("flex_translator", Priority.LOW, TranslationProcessor(placeholders, translator))
+
+        addListener(ChatMessageHook(messages, config.hooks))
+        addListener(ConnectionNotificationHook(placeholders, config.hooks))
+        addListener(PlayerNameHook(placeholders, this, config.hooks))
+    }
+
+    override fun onServerCommandsRegistration(handler: CommandHandler) {
+        handler.register("flex-reload-templates", "Reload the placeholder templates") {
+            try {
+                val config = loadConfig()
+                templates.config = config.templates
+                logger.info("Reloaded templates")
+            } catch (e: Exception) {
+                logger.error("Failed to reload templates", e)
+            }
+        }
     }
 
     override fun addListener(listener: PluginListener) {

@@ -36,10 +36,8 @@ import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexKeys
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.placeholder.PlaceholderContext
-import com.xpdustry.flex.placeholder.PlaceholderMode
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
-import com.xpdustry.flex.processor.AbstractProcessorPipeline
-import com.xpdustry.flex.translator.Translator
+import com.xpdustry.flex.processor.AbstractPriorityProcessorPipeline
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.future.await
@@ -51,22 +49,19 @@ import java.util.concurrent.CompletableFuture
 internal class MessagePipelineImpl(
     plugin: MindustryPlugin,
     private val placeholders: PlaceholderPipeline,
-    private val translator: Translator,
 ) : MessagePipeline,
     PluginListener,
-    AbstractProcessorPipeline<MessageContext, CompletableFuture<String>>(plugin, "chat-message") {
+    AbstractPriorityProcessorPipeline<MessageContext, CompletableFuture<String>>(plugin, "message") {
     private val foo = mutableSetOf<MUUID>()
 
     override fun onPluginInit() {
         Vars.netServer.addPacketHandler("fooCheck") { player, _ -> foo += MUUID.from(player) }
-        register("admin_filter", AdminFilterProcessor)
-        register("flex_translator", TranslationProcessor(placeholders, translator))
     }
 
     override fun pump(context: MessageContext) =
         FlexScope.future {
             var result = context.message
-            for (processor in processors) {
+            for (processor in processors.values.sorted()) {
                 result =
                     try {
                         processor.process(context.copy(message = result)).await()
@@ -79,16 +74,16 @@ internal class MessagePipelineImpl(
                         )
                         result
                     }
-                if (result.isEmpty()) break
+                if (result.isBlank()) break
             }
             result
         }
 
-    override fun chat(
+    override fun broadcast(
         sender: Audience,
         target: Audience,
         message: String,
-        preset: String,
+        template: String,
     ): CompletableFuture<Void?> =
         FlexScope.future {
             target.audiences.map { target ->
@@ -111,10 +106,9 @@ internal class MessagePipelineImpl(
                         placeholders.pump(
                             PlaceholderContext(
                                 target,
-                                preset,
+                                "%template:$template%",
                                 MutableKeyContainer.create().apply { set(FlexKeys.MESSAGE, processed) },
                             ),
-                            PlaceholderMode.PRESET,
                         )
 
                     if (formatted.isBlank()) {

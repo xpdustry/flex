@@ -44,9 +44,12 @@ repositories {
 dependencies {
     compileOnly(libs.kotlinx.coroutines.core)
     compileOnly(libs.kotlinx.coroutines.jdk8)
-    compileOnly(toxopid.dependencies.arcCore)
     compileOnly(toxopid.dependencies.mindustryCore)
+    testImplementation(toxopid.dependencies.mindustryCore)
+    compileOnly(toxopid.dependencies.arcCore)
+    testImplementation(toxopid.dependencies.arcCore)
     compileOnly(libs.distributor.api)
+    testImplementation(libs.distributor.api)
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
     implementation(libs.deepl) {
@@ -58,6 +61,7 @@ dependencies {
     }
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly(libs.slf4j.simple)
 }
 
 signing {

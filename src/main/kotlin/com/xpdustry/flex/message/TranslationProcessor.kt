@@ -25,54 +25,23 @@
  */
 package com.xpdustry.flex.message
 
-import arc.Core
 import arc.util.Strings
-import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.flex.FlexKeys
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.placeholder.PlaceholderContext
-import com.xpdustry.flex.placeholder.PlaceholderMode
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.processor.Processor
+import com.xpdustry.flex.translator.RateLimitedException
 import com.xpdustry.flex.translator.Translator
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withTimeout
-import mindustry.Vars
 import org.slf4j.LoggerFactory
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.seconds
-
-internal object AdminFilterProcessor : Processor<MessageContext, CompletableFuture<String>> {
-    private val logger = LoggerFactory.getLogger(AdminFilterProcessor::class.java)
-    private val filtering = AtomicBoolean(false)
-
-    override fun process(context: MessageContext): CompletableFuture<String> {
-        return if (context.sender is PlayerAudience && context.kind == MessageContext.Kind.CHAT) {
-            if (filtering.get()) {
-                logger.debug("Possible deadlock detected, skipping admin filter", IllegalStateException())
-                return CompletableFuture.completedFuture(context.message)
-            }
-            val future = CompletableFuture<String>()
-            Core.app.post {
-                try {
-                    filtering.set(true)
-                    future.complete(Vars.netServer.admins.filterMessage(context.sender.player, context.message) ?: "")
-                } finally {
-                    filtering.set(false)
-                }
-            }
-            future.orTimeout(5, TimeUnit.SECONDS)
-        } else {
-            CompletableFuture.completedFuture(context.message)
-        }
-    }
-}
 
 internal class TranslationProcessor(
     private val placeholders: PlaceholderPipeline,
@@ -80,10 +49,18 @@ internal class TranslationProcessor(
 ) : Processor<MessageContext, CompletableFuture<String>> {
     override fun process(context: MessageContext) =
         FlexScope.future {
+            if (context.kind != MessageContext.Kind.CHAT) {
+                return@future context.message
+            }
+
             val sourceLocale = context.sender.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
             val targetLocale = context.target.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
-            val raw = Strings.stripColors(context.message).lowercase()
 
+            if (!(translator.isSupportedLanguage(sourceLocale) && translator.isSupportedLanguage(targetLocale))) {
+                return@future context.message
+            }
+
+            val raw = Strings.stripColors(context.message).lowercase()
             try {
                 val result =
                     withTimeout(3.seconds) {
@@ -93,21 +70,23 @@ internal class TranslationProcessor(
                     placeholders.pump(
                         PlaceholderContext(
                             context.sender,
-                            "translation-format",
+                            TRANSLATION_PLACEHOLDER,
                             MutableKeyContainer.create().apply {
                                 set(FlexKeys.MESSAGE, context.message)
                                 set(FlexKeys.TRANSLATED_MESSAGE, result)
                             },
                         ),
-                        PlaceholderMode.PRESET,
                     )
                 if (raw == result.lowercase()) {
                     context.message
-                } else if (formatted.isBlank()) {
+                } else if (formatted.isBlank() || formatted == TRANSLATION_PLACEHOLDER) {
                     "${context.message} [lightgray]($result)"
                 } else {
                     formatted
                 }
+            } catch (e: RateLimitedException) {
+                logger.debug("The {} translator is rate limited", translator.javaClass.simpleName)
+                context.message
             } catch (e: Exception) {
                 logger.error(
                     "Failed to translate the message '{}' from {} to {}",
@@ -122,5 +101,6 @@ internal class TranslationProcessor(
 
     companion object {
         private val logger = LoggerFactory.getLogger(TranslationProcessor::class.java)
+        private const val TRANSLATION_PLACEHOLDER = "%template:translation_message%"
     }
 }

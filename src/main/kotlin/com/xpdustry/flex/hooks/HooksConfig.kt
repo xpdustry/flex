@@ -23,15 +23,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.placeholder
+package com.xpdustry.flex.hooks
 
 import com.sksamuel.hoplite.ConfigAlias
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 
-internal data class PlaceholderConfig(val presets: Map<String, Preset> = emptyMap()) {
-    internal data class Preset(val steps: List<Step>)
-
-    internal data class Step(
-        val text: String,
-        @ConfigAlias("if") val filter: PlaceholderFilter = PlaceholderFilter.None,
-    )
+internal data class HooksConfig(
+    val chat: Boolean = true,
+    val join: Boolean = true,
+    val quit: Boolean = true,
+    val name: Name = Name(),
+) {
+    data class Name(
+        val enabled: Boolean = true,
+        @ConfigAlias("update-interval") val interval: Duration = 500.milliseconds,
+    ) {
+        init {
+            require(interval > Duration.ZERO) { "Interval duration must be greater than 0" }
+        }
+    }
 }

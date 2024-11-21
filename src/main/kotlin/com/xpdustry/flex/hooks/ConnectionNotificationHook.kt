@@ -23,40 +23,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message
+package com.xpdustry.flex.hooks
 
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.placeholder.PlaceholderContext
-import com.xpdustry.flex.placeholder.PlaceholderMode
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import mindustry.game.EventType
 import mindustry.gen.Player
 
-internal class FlexConnectMessageHook(
+internal class ConnectionNotificationHook(
     private val placeholders: PlaceholderPipeline,
-    private val config: MessageConfig,
+    private val hooks: HooksConfig,
 ) : PluginListener {
     @EventHandler
-    internal fun onPlayerJoin(event: EventType.PlayerJoin) = sendConnect(event.player, "mindustry-join")
+    internal fun onPlayerJoin(event: EventType.PlayerJoin) {
+        if (hooks.join) sendConnect(event.player, "mindustry_join")
+    }
 
     @EventHandler
-    internal fun onPlayerQuit(event: EventType.PlayerLeave) = sendConnect(event.player, "mindustry-quit")
+    internal fun onPlayerQuit(event: EventType.PlayerLeave) {
+        if (hooks.quit) sendConnect(event.player, "mindustry_quit")
+    }
 
     private fun sendConnect(
         player: Player,
-        pipeline: String,
-    ) {
-        if (!config.conn) return
-        DistributorProvider.get().audienceProvider.players.sendMessage(
-            DistributorProvider.get()
-                .mindustryComponentDecoder.decode(
-                    placeholders.pump(
-                        PlaceholderContext(DistributorProvider.get().audienceProvider.getPlayer(player), pipeline),
-                        PlaceholderMode.PRESET,
-                    ),
+        template: String,
+    ) = DistributorProvider.get().audienceProvider.players.sendMessage(
+        DistributorProvider.get()
+            .mindustryComponentDecoder.decode(
+                placeholders.pump(
+                    PlaceholderContext(DistributorProvider.get().audienceProvider.getPlayer(player), "%template:$template%"),
                 ),
-        )
-    }
+            ),
+    )
 }

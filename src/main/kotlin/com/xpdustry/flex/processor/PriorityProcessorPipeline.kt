@@ -23,13 +23,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.message
+package com.xpdustry.flex.processor
 
-import com.sksamuel.hoplite.ConfigAlias
-import com.xpdustry.flex.translator.TranslatorConfig
+import com.xpdustry.distributor.api.util.Priority
 
-internal data class MessageConfig(
-    @ConfigAlias("flex-chat-messages") val chat: Boolean = true,
-    @ConfigAlias("flex-conn-messages") val conn: Boolean = true,
-    val translator: TranslatorConfig = TranslatorConfig.None,
-)
+public interface PriorityProcessorPipeline<I : Any, O : Any> : ProcessorPipeline<I, O> {
+    public override fun register(
+        name: String,
+        processor: Processor<I, O>,
+    ): Unit = register(name, Priority.NORMAL, processor)
+
+    public fun register(
+        name: String,
+        priority: Priority,
+        processor: Processor<I, O>,
+    )
+}

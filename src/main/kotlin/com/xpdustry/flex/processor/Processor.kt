@@ -25,18 +25,6 @@
  */
 package com.xpdustry.flex.processor
 
-import arc.Core
-import java.util.concurrent.CompletableFuture
-import java.util.function.Function
-
 public fun interface Processor<I : Any, O : Any> {
     public fun process(context: I): O
-
-    public companion object {
-        @JvmStatic
-        public fun <I : Any, O : Any> synchronous(process: Function<I, O>): Processor<I, CompletableFuture<O>> =
-            Processor {
-                CompletableFuture.supplyAsync({ process.apply(it) }, Core.app::post)
-            }
-    }
 }

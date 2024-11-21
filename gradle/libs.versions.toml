@@ -14,6 +14,7 @@ dokka = "1.9.20"
 
 # utilities
 slf4md = "1.0.1"
+slf4j = "2.0.16"
 distributor = "4.0.0-rc.3"
 hoplite = "2.8.2"
 deepl = "1.7.0"
@@ -34,6 +35,7 @@ hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "ho
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 deepl = { module = "com.deepl.api:deepl-java", version.ref = "deepl" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 # testing
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }

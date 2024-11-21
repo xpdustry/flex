@@ -26,7 +26,7 @@
 package com.xpdustry.flex.message
 
 import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.flex.processor.ProcessorPipeline
+import com.xpdustry.flex.processor.PriorityProcessorPipeline
 import java.util.concurrent.CompletableFuture
 
 public data class MessageContext
@@ -43,17 +43,17 @@ public data class MessageContext
         }
     }
 
-public interface MessagePipeline : ProcessorPipeline<MessageContext, CompletableFuture<String>> {
-    public fun chat(
+public interface MessagePipeline : PriorityProcessorPipeline<MessageContext, CompletableFuture<String>> {
+    public fun broadcast(
         sender: Audience,
         target: Audience,
         message: String,
-    ): CompletableFuture<Void?> = chat(sender, target, message, "mindustry-chat")
+    ): CompletableFuture<Void?> = broadcast(sender, target, message, "mindustry_chat")
 
-    public fun chat(
+    public fun broadcast(
         sender: Audience,
         target: Audience,
         message: String,
-        preset: String,
+        template: String,
     ): CompletableFuture<Void?>
 }

@@ -23,20 +23,19 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.placeholder
+package com.xpdustry.flex
 
-import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.distributor.api.key.KeyContainer
-import com.xpdustry.flex.processor.ProcessorPipeline
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.plugin.PluginMetadata
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-public data class PlaceholderContext
-    @JvmOverloads
-    constructor(
-        val subject: Audience,
-        val query: String,
-        val arguments: KeyContainer = KeyContainer.empty(),
-    )
+object TestPlugin : MindustryPlugin {
+    override fun getLogger(): Logger = LoggerFactory.getLogger(TestPlugin::class.java)
 
-public interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String> {
-    override fun pump(context: PlaceholderContext): String
+    override fun getMetadata(): PluginMetadata =
+        PluginMetadata.builder()
+            .setName("test")
+            .setDisplayName("TestPlugin")
+            .build()
 }
