@@ -88,16 +88,7 @@ internal class MessagePipelineImpl(
         FlexScope.future {
             target.audiences.map { target ->
                 FlexScope.async {
-                    val processed =
-                        pump(
-                            MessageContext(
-                                sender,
-                                target,
-                                message,
-                                MessageContext.Kind.CHAT,
-                            ),
-                        ).await()
-
+                    val processed = pump(MessageContext(sender, target, message)).await()
                     if (processed.isBlank()) {
                         return@async
                     }

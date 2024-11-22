@@ -100,6 +100,7 @@ internal class ChatMessageHook(
                         audience,
                         DistributorProvider.get().audienceProvider.server,
                         message,
+                        filter = true,
                         if (isCommand) MessageContext.Kind.COMMAND else MessageContext.Kind.CHAT,
                     ),
                 ).await()

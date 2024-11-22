@@ -35,6 +35,7 @@ public data class MessageContext
         val sender: Audience,
         val target: Audience,
         val message: String,
+        val filter: Boolean = false,
         val kind: Kind = Kind.CHAT,
     ) {
         public enum class Kind {

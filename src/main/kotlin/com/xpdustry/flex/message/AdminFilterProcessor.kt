@@ -26,7 +26,6 @@
 package com.xpdustry.flex.message
 
 import arc.Core
-import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.flex.processor.Processor
 import mindustry.Vars
@@ -41,10 +40,7 @@ internal object AdminFilterProcessor : Processor<MessageContext, CompletableFutu
     private val filtering = AtomicBoolean(false)
 
     override fun process(context: MessageContext): CompletableFuture<String> =
-        if (context.sender is PlayerAudience &&
-            context.kind == MessageContext.Kind.CHAT &&
-            context.target == DistributorProvider.get().audienceProvider.server
-        ) {
+        if (context.sender is PlayerAudience && context.kind == MessageContext.Kind.CHAT && context.filter) {
             CompletableFuture.supplyAsync(
                 { process(context.sender.player, context.message) },
                 Core.app::post,
@@ -59,7 +55,7 @@ internal object AdminFilterProcessor : Processor<MessageContext, CompletableFutu
     ): String {
         if (filtering.get()) {
             logger.debug(
-                "Possible deadlock detected for message {} from player {} ({}), skipping admin filter",
+                "Stack overflow detected for message {} from player {} ({}), skipping admin filter",
                 message,
                 player.plainName(),
                 player.uuid(),
