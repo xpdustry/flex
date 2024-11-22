@@ -15,7 +15,7 @@ dokka = "1.9.20"
 # utilities
 slf4md = "1.0.1"
 slf4j = "2.0.16"
-distributor = "4.0.0-rc.3"
+distributor = "4.0.0-SNAPSHOT"
 hoplite = "2.8.2"
 deepl = "1.7.0"
 caffeine = "3.1.8"
