@@ -110,7 +110,7 @@ internal class ChatMessageHook(
             }
 
             if (isCommand) {
-                ROOT_LOGGER.info("<&fi{}: {}&fr>", "&lk${audience.player.plainName()}", "&lw$forServer")
+                root.info("<&fi{}: {}&fr>", "&lk${audience.player.plainName()}", "&lw$forServer")
                 Core.app.post {
                     val response = Vars.netServer.clientCommands.handleMessage(forServer, audience.player)
                     when (response.type) {
@@ -124,7 +124,7 @@ internal class ChatMessageHook(
                 return@launch
             }
 
-            ROOT_LOGGER.info("&fi{}: {}", "&lc${audience.player.plainName()}", "&lw${Strings.stripColors(forServer)}")
+            root.info("&fi{}: {}", "&lc${audience.player.plainName()}", "&lw${Strings.stripColors(forServer)}")
 
             messages.broadcast(
                 audience,
@@ -135,6 +135,6 @@ internal class ChatMessageHook(
     }
 
     companion object {
-        private val ROOT_LOGGER = LoggerFactory.getLogger("ROOT")
+        private val root = LoggerFactory.getLogger("ROOT")
     }
 }
