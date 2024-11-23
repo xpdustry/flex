@@ -112,6 +112,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 withReport()
                 withReportPrintFn(logger::debug)
                 addParameterMapper(KebabCaseParamMapper)
+                strict()
             }
 
         if (file.notExists()) {

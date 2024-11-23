@@ -36,6 +36,7 @@ import com.sksamuel.hoplite.fp.invalid
 import com.sksamuel.hoplite.fp.sequence
 import com.sksamuel.hoplite.fp.valid
 import kotlin.reflect.KType
+import kotlin.reflect.jvm.jvmName
 
 internal class PlaceholderFilterDecoder : NullHandlingDecoder<PlaceholderFilter> {
     override fun supports(type: KType) = type.classifier == PlaceholderFilter::class
@@ -50,7 +51,7 @@ internal class PlaceholderFilterDecoder : NullHandlingDecoder<PlaceholderFilter>
             if (node.size != 1) {
                 ConfigFailure.Generic("Expected a single key in map").invalid()
             } else {
-                val (key, value) = node.map.entries.first()
+                val (operator, value) = node.map.entries.first()
                 val filters =
                     when (value) {
                         is ArrayNode ->
@@ -61,13 +62,13 @@ internal class PlaceholderFilterDecoder : NullHandlingDecoder<PlaceholderFilter>
 
                         else -> decode(value, type, context).map { listOf(it) }
                     }
-                when (key) {
-                    "not" -> filters.map(PlaceholderFilter::Not)
-                    "any" -> filters.map(PlaceholderFilter::Any)
-                    "and" -> filters.map(PlaceholderFilter::And)
-                    else -> ConfigFailure.Generic("Unknown key $key").invalid()
+                when (operator) {
+                    "not" -> filters.map(PlaceholderFilter::Not).onSuccess { context.usedPaths += node.atKey(operator).path }
+                    "any" -> filters.map(PlaceholderFilter::Any).onSuccess { context.usedPaths += node.atKey(operator).path }
+                    "and" -> filters.map(PlaceholderFilter::And).onSuccess { context.usedPaths += node.atKey(operator).path }
+                    else -> ConfigFailure.Generic("Unknown operator $operator").invalid()
                 }
             }
-        else -> ConfigFailure.Generic("Unsupported node type ${node::class}").invalid()
+        else -> ConfigFailure.Generic("Unsupported node type ${node::class.jvmName}").invalid()
     }
 }
