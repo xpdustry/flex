@@ -89,8 +89,7 @@ class PlaceholderPipelineImplTest {
     fun `test template`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { "value" }
-        val processor = TemplateProcessor(pipeline)
-        processor.config = mapOf("test" to listOf(Step("hello %test% world")))
+        val processor = TemplateProcessor(pipeline, mapOf("test" to listOf(Step("hello %test% world"))))
         pipeline.register("template", processor)
         Assertions.assertEquals("hello value world", pipeline.pump(PlaceholderContext(Audience.empty(), "%template:test%")))
     }

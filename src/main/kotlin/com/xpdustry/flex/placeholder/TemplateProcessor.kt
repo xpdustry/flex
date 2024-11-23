@@ -26,6 +26,8 @@
 package com.xpdustry.flex.placeholder
 
 import com.sksamuel.hoplite.ConfigAlias
+import com.xpdustry.flex.FlexConfig
+import com.xpdustry.flex.FlexListener
 import com.xpdustry.flex.processor.Processor
 import org.slf4j.LoggerFactory
 
@@ -38,8 +40,14 @@ internal data class Step(
     @ConfigAlias("if") val filter: PlaceholderFilter = PlaceholderFilter.None,
 )
 
-internal class TemplateProcessor(private val placeholders: PlaceholderPipeline) : Processor<PlaceholderContext, String> {
-    internal var config: TemplateConfig = emptyMap()
+internal class TemplateProcessor(
+    private val placeholders: PlaceholderPipeline,
+    private var config: TemplateConfig = emptyMap(),
+) : Processor<PlaceholderContext, String>, FlexListener {
+    override fun onFlexConfigReload(config: FlexConfig) {
+        this.config = config.templates
+        logger.info("Reloaded {} templates", config.templates.size)
+    }
 
     override fun process(context: PlaceholderContext) =
         config[context.query]

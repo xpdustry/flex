@@ -59,7 +59,6 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override lateinit var messages: MessagePipeline
     override lateinit var translator: Translator
     private val processor = PluginAnnotationProcessor.events(this)
-    private lateinit var templates: TemplateProcessor
 
     override fun onInit() {
         val config = loadConfig()
@@ -67,9 +66,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         translator = createTranslator(config.translator)
 
         placeholders = PlaceholderPipelineImpl(this)
-        templates = TemplateProcessor(placeholders)
-        templates.config = config.templates
-        placeholders.register("template", templates)
+        placeholders.register("template", TemplateProcessor(placeholders, config.templates).also(::addListener))
         placeholders.register("argument", ArgumentProcessor)
         placeholders.register("player", PlayerProcessor)
         placeholders.register("permission", PermissionProcessor)
@@ -84,13 +81,13 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     }
 
     override fun onServerCommandsRegistration(handler: CommandHandler) {
-        handler.register("flex-reload-templates", "Reload the placeholder templates") {
+        handler.register("flex-reload", "Reload flex configuration") {
             try {
                 val config = loadConfig()
-                templates.config = config.templates
-                logger.info("Reloaded templates")
+                listeners.forEach { if (it is FlexListener) it.onFlexConfigReload(config) }
+                logger.info("Flex reload successful")
             } catch (e: Exception) {
-                logger.error("Failed to reload templates", e)
+                logger.error("Failed to reload flex", e)
             }
         }
     }
@@ -119,9 +116,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
             logger.warn("Configuration file does not exist, creating default configuration")
             javaClass.classLoader.getResource("com/xpdustry/flex/default.yaml")!!
                 .openStream().buffered()
-                .use { input ->
-                    file.outputStream().buffered().use { output -> input.copyTo(output) }
-                }
+                .use { i -> file.outputStream().buffered().use { o -> i.copyTo(o) } }
         }
 
         return loader.loadConfigOrThrow()
