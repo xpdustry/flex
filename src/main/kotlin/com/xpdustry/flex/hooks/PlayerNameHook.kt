@@ -61,7 +61,10 @@ internal class PlayerNameHook(
                     placeholders.pump(
                         PlaceholderContext(DistributorProvider.get().audienceProvider.getPlayer(player), "%template:mindustry_name%"),
                     )
-                if (result.isNotBlank()) {
+                if (result.length > 256) {
+                    logger.warn("Possible name overflow for player {} ({}), resetting.", player.name(), player.uuid())
+                    player.name(player.info.lastName)
+                } else if (result.isNotBlank()) {
                     player.name(result)
                 } else {
                     logger.warn("Processed name of player {} ({}) is blank.", player.name(), player.uuid())
