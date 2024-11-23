@@ -30,30 +30,31 @@ import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.flex.processor.Processor
 
 internal val ArgumentProcessor =
-    Processor<PlaceholderContext, String> { ctx ->
+    Processor<PlaceholderContext, String?> { ctx ->
         val parts = ctx.query.split("_", limit = 2)
         if (parts.size != 2) return@Processor ""
         val (namespace, name) = parts
-        ctx.arguments[Key.of(namespace, name, Any::class.java)]?.toString() ?: ""
+        ctx.arguments[Key.of(namespace, name, Any::class.java)]?.toString()
     }
 
 internal val PlayerProcessor =
-    Processor<PlaceholderContext, String> { ctx ->
+    Processor<PlaceholderContext, String?> { ctx ->
         if (ctx.subject !is PlayerAudience) return@Processor ""
         val player = ctx.subject.player
         when (ctx.query.lowercase()) {
             "name" -> player.info.lastName
             "name_raw" -> player.info.plainLastName()
+            "name_display" -> player.name()
             "tile_x" -> player.tileX().toString()
             "tile_y" -> player.tileY().toString()
             "world_x" -> player.getX().toString()
             "world_y" -> player.getY().toString()
             "color" -> String.format("#%06X", player.color().rgb888())
-            else -> ""
+            else -> null
         }
     }
 
 internal val PermissionProcessor =
-    Processor<PlaceholderContext, String> { ctx ->
+    Processor<PlaceholderContext, String?> { ctx ->
         if (ctx.subject.permissions.getPermission(ctx.query).asBoolean()) ctx.query else ""
     }

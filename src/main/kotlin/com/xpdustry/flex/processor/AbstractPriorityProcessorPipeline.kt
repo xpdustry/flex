@@ -30,7 +30,7 @@ import com.xpdustry.distributor.api.util.Priority
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 
-public abstract class AbstractPriorityProcessorPipeline<I : Any, O : Any>(
+public abstract class AbstractPriorityProcessorPipeline<I, O>(
     public val plugin: MindustryPlugin,
     private val identifier: String,
 ) : PriorityProcessorPipeline<I, O> {

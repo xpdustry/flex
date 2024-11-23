@@ -31,7 +31,7 @@ import java.util.regex.Pattern
 
 internal class PlaceholderPipelineImpl(
     plugin: MindustryPlugin,
-) : PlaceholderPipeline, AbstractPriorityProcessorPipeline<PlaceholderContext, String>(plugin, "placeholder") {
+) : PlaceholderPipeline, AbstractPriorityProcessorPipeline<PlaceholderContext, String?>(plugin, "placeholder") {
     override fun pump(context: PlaceholderContext): String {
         val builder = StringBuilder()
         val matcher = PLACEHOLDER_REGEX.matcher(context.query)
@@ -39,9 +39,7 @@ internal class PlaceholderPipelineImpl(
             val name = matcher.group("name")
             val replacement =
                 try {
-                    processors[name]
-                        ?.process(context.copy(query = matcher.group("query") ?: ""))
-                        ?.takeIf { it.isNotEmpty() }
+                    processors[name]?.process(context.copy(query = matcher.group("query") ?: ""))
                 } catch (e: Exception) {
                     plugin.logger.error("Error while interpolating placeholder '{}'", name, e)
                     null

@@ -37,6 +37,6 @@ public data class PlaceholderContext
         val arguments: KeyContainer = KeyContainer.empty(),
     )
 
-public interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String> {
+public interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String?> {
     override fun pump(context: PlaceholderContext): String
 }

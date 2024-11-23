@@ -27,7 +27,7 @@ package com.xpdustry.flex.processor
 
 import com.xpdustry.distributor.api.util.Priority
 
-public interface PriorityProcessorPipeline<I : Any, O : Any> : ProcessorPipeline<I, O> {
+public interface PriorityProcessorPipeline<I, O> : ProcessorPipeline<I, O> {
     public override fun register(
         name: String,
         processor: Processor<I, O>,

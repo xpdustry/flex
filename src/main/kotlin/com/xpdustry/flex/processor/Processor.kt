@@ -25,6 +25,6 @@
  */
 package com.xpdustry.flex.processor
 
-public fun interface Processor<I : Any, O : Any> {
+public fun interface Processor<I, O> {
     public fun process(context: I): O
 }

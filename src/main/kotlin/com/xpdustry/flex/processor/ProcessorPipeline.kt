@@ -25,7 +25,7 @@
  */
 package com.xpdustry.flex.processor
 
-public interface ProcessorPipeline<I : Any, O : Any> {
+public interface ProcessorPipeline<I, O> {
     public fun register(
         name: String,
         processor: Processor<I, O>,

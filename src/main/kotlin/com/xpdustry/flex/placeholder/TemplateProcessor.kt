@@ -43,7 +43,7 @@ internal data class Step(
 internal class TemplateProcessor(
     private val placeholders: PlaceholderPipeline,
     private var config: TemplateConfig = emptyMap(),
-) : Processor<PlaceholderContext, String>, FlexListener {
+) : Processor<PlaceholderContext, String?>, FlexListener {
     override fun onFlexConfigReload(config: FlexConfig) {
         this.config = config.templates
         logger.info("Reloaded {} templates", config.templates.size)
@@ -66,9 +66,7 @@ internal class TemplateProcessor(
                 }
             }
             ?.filterNotNull()
-            ?.takeIf { it.isNotEmpty() }
             ?.joinToString(separator = "")
-            ?: ""
 
     companion object {
         private val logger = LoggerFactory.getLogger(TemplateProcessor::class.java)

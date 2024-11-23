@@ -53,7 +53,7 @@ class PlaceholderPipelineImplTest {
     }
 
     @Test
-    fun `test singular processor`() {
+    fun `test simple placeholder`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { "value" }
         Assertions.assertEquals("test", pipeline.pump(PlaceholderContext(Audience.empty(), "test")))
@@ -62,7 +62,7 @@ class PlaceholderPipelineImplTest {
     }
 
     @Test
-    fun `test multiple processors`() {
+    fun `test multiple placeholders`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test1") { "value1" }
         pipeline.register("test2") { "value2" }
@@ -73,13 +73,27 @@ class PlaceholderPipelineImplTest {
     }
 
     @Test
-    fun `test unknown processor`() {
+    fun `test empty placeholder`() {
+        val pipeline = PlaceholderPipelineImpl(TestPlugin)
+        pipeline.register("test") { "" }
+        Assertions.assertEquals("hello  world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
+    }
+
+    @Test
+    fun `test null placeholder`() {
+        val pipeline = PlaceholderPipelineImpl(TestPlugin)
+        pipeline.register("test") { null }
+        Assertions.assertEquals("hello %test% world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
+    }
+
+    @Test
+    fun `test unknown placeholder`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         Assertions.assertEquals("hello %test% world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
     }
 
     @Test
-    fun `test throwing processor`() {
+    fun `test throwing placeholder`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { throw RuntimeException("Expected") }
         Assertions.assertEquals("hello %test% world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
