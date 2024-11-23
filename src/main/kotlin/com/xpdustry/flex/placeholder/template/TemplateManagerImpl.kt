@@ -23,14 +23,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.placeholder.template
 
-import com.xpdustry.flex.hooks.HooksConfig
-import com.xpdustry.flex.placeholder.template.TemplateConfig
-import com.xpdustry.flex.translator.TranslatorConfig
+import com.xpdustry.flex.FlexConfig
+import com.xpdustry.flex.FlexListener
+import org.slf4j.LoggerFactory
+import java.util.concurrent.ConcurrentHashMap
 
-internal data class FlexConfig(
-    val translator: TranslatorConfig = TranslatorConfig.None,
-    val hooks: HooksConfig = HooksConfig(),
-    val templates: TemplateConfig = emptyMap(),
-)
+internal class TemplateManagerImpl(config: TemplateConfig) : TemplateManager, FlexListener {
+    private var templates: Map<String, Template> = config.toTemplateMap()
+    private val defaults = ConcurrentHashMap<String, Template>()
+
+    override fun onFlexConfigReload(config: FlexConfig) {
+        templates = config.templates.toTemplateMap()
+        logger.info("Reloaded {} templates", config.templates.size)
+    }
+
+    override fun getTemplate(name: String): Template? = templates[name] ?: defaults[name]
+
+    override fun hasTemplate(name: String): Boolean = templates.containsKey(name) || defaults.containsKey(name)
+
+    override fun setDefaultTemplate(
+        name: String,
+        template: Template,
+    ) {
+        defaults[name] = template
+    }
+
+    private fun TemplateConfig.toTemplateMap(): Map<String, Template> = mapValues { (_, steps) -> Template(steps) }
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(TemplateManagerImpl::class.java)
+    }
+}

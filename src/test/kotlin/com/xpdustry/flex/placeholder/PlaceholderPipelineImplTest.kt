@@ -29,6 +29,9 @@ import arc.Core
 import arc.mock.MockSettings
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.flex.TestPlugin
+import com.xpdustry.flex.placeholder.template.TemplateManagerImpl
+import com.xpdustry.flex.placeholder.template.TemplateProcessor
+import com.xpdustry.flex.placeholder.template.TemplateStep
 import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.net.ArcNetProvider
@@ -103,7 +106,7 @@ class PlaceholderPipelineImplTest {
     fun `test template`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { "value" }
-        val processor = TemplateProcessor(pipeline, mapOf("test" to listOf(Step("hello %test% world"))))
+        val processor = TemplateProcessor(pipeline, TemplateManagerImpl(mapOf("test" to listOf(TemplateStep("hello %test% world")))))
         pipeline.register("template", processor)
         Assertions.assertEquals("hello value world", pipeline.pump(PlaceholderContext(Audience.empty(), "%template:test%")))
     }

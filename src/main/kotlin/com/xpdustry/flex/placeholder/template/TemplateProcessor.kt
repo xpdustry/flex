@@ -23,40 +23,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.placeholder
+package com.xpdustry.flex.placeholder.template
 
-import com.sksamuel.hoplite.ConfigAlias
-import com.xpdustry.flex.FlexConfig
 import com.xpdustry.flex.FlexListener
+import com.xpdustry.flex.placeholder.PlaceholderContext
+import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.processor.Processor
 import org.slf4j.LoggerFactory
 
-internal typealias TemplateConfig = Map<String, Template>
-
-internal typealias Template = List<Step>
-
-internal data class Step(
-    val text: String,
-    @ConfigAlias("if") val filter: PlaceholderFilter = PlaceholderFilter.None,
-)
-
 internal class TemplateProcessor(
     private val placeholders: PlaceholderPipeline,
-    private var config: TemplateConfig = emptyMap(),
+    private var templates: TemplateManager,
 ) : Processor<PlaceholderContext, String?>, FlexListener {
-    override fun onFlexConfigReload(config: FlexConfig) {
-        this.config = config.templates
-        logger.info("Reloaded {} templates", config.templates.size)
-    }
-
     override fun process(context: PlaceholderContext) =
-        config[context.query]
+        templates.getTemplate(context.query)
+            ?.steps
             ?.map { step ->
                 val accepted =
                     try {
                         step.filter.accepts(context)
                     } catch (e: Exception) {
-                        logger.error("Error while processing template '{}'", context.query, e)
+                        logger.error("Error while filtering template step for '{}'", context.query, e)
                         return@map null
                     }
                 if (accepted) {

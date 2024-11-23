@@ -23,33 +23,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.placeholder
+package com.xpdustry.flex.placeholder.template
 
-import com.xpdustry.flex.FlexAPI
+public interface TemplateManager {
+    public fun getTemplate(name: String): Template?
 
-internal sealed interface PlaceholderFilter {
-    fun accepts(context: PlaceholderContext): Boolean
+    public fun hasTemplate(name: String): Boolean
 
-    data class Raw(val placeholder: String) : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext): Boolean =
-            FlexAPI.get().placeholders
-                .pump(context.copy(query = "%$placeholder%"))
-                .isNotEmpty()
-    }
-
-    data class Any(val filters: List<PlaceholderFilter>) : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext) = filters.any { it.accepts(context) }
-    }
-
-    data class And(val filters: List<PlaceholderFilter>) : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext) = filters.all { it.accepts(context) }
-    }
-
-    data class Not(val filters: List<PlaceholderFilter>) : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext) = filters.none { it.accepts(context) }
-    }
-
-    data object None : PlaceholderFilter {
-        override fun accepts(context: PlaceholderContext): Boolean = true
-    }
+    public fun setDefaultTemplate(
+        name: String,
+        template: Template,
+    )
 }

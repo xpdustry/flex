@@ -23,7 +23,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.placeholder
+package com.xpdustry.flex.placeholder.template
 
 import com.sksamuel.hoplite.ArrayNode
 import com.sksamuel.hoplite.ConfigFailure
@@ -38,15 +38,15 @@ import com.sksamuel.hoplite.fp.valid
 import kotlin.reflect.KType
 import kotlin.reflect.jvm.jvmName
 
-internal class PlaceholderFilterDecoder : NullHandlingDecoder<PlaceholderFilter> {
-    override fun supports(type: KType) = type.classifier == PlaceholderFilter::class
+internal class TemplateFilterDecoder : NullHandlingDecoder<TemplateFilter> {
+    override fun supports(type: KType) = type.classifier == TemplateFilter::class
 
     override fun safeDecode(
         node: Node,
         type: KType,
         context: DecoderContext,
     ) = when (node) {
-        is StringNode -> PlaceholderFilter.Raw(node.value).valid()
+        is StringNode -> TemplateFilter.placeholder(node.value).valid()
         is MapNode ->
             if (node.size != 1) {
                 ConfigFailure.Generic("Expected a single key in map").invalid()
@@ -63,9 +63,9 @@ internal class PlaceholderFilterDecoder : NullHandlingDecoder<PlaceholderFilter>
                         else -> decode(value, type, context).map { listOf(it) }
                     }
                 when (operator) {
-                    "not" -> filters.map(PlaceholderFilter::Not).onSuccess { context.usedPaths += node.atKey(operator).path }
-                    "any" -> filters.map(PlaceholderFilter::Any).onSuccess { context.usedPaths += node.atKey(operator).path }
-                    "and" -> filters.map(PlaceholderFilter::And).onSuccess { context.usedPaths += node.atKey(operator).path }
+                    "not" -> filters.map(TemplateFilter::not).onSuccess { context.usedPaths += node.atKey(operator).path }
+                    "any" -> filters.map(TemplateFilter::any).onSuccess { context.usedPaths += node.atKey(operator).path }
+                    "and" -> filters.map(TemplateFilter::and).onSuccess { context.usedPaths += node.atKey(operator).path }
                     else -> ConfigFailure.Generic("Unknown operator $operator").invalid()
                 }
             }

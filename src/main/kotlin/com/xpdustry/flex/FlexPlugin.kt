@@ -42,11 +42,13 @@ import com.xpdustry.flex.message.MessagePipelineImpl
 import com.xpdustry.flex.message.TranslationProcessor
 import com.xpdustry.flex.placeholder.ArgumentProcessor
 import com.xpdustry.flex.placeholder.PermissionProcessor
-import com.xpdustry.flex.placeholder.PlaceholderFilterDecoder
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.PlaceholderPipelineImpl
 import com.xpdustry.flex.placeholder.PlayerProcessor
-import com.xpdustry.flex.placeholder.TemplateProcessor
+import com.xpdustry.flex.placeholder.template.TemplateFilterDecoder
+import com.xpdustry.flex.placeholder.template.TemplateManager
+import com.xpdustry.flex.placeholder.template.TemplateManagerImpl
+import com.xpdustry.flex.placeholder.template.TemplateProcessor
 import com.xpdustry.flex.translator.DeeplTranslator
 import com.xpdustry.flex.translator.LibreTranslateTranslator
 import com.xpdustry.flex.translator.Translator
@@ -58,15 +60,17 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override lateinit var placeholders: PlaceholderPipeline
     override lateinit var messages: MessagePipeline
     override lateinit var translator: Translator
+    override lateinit var templates: TemplateManager
     private val processor = PluginAnnotationProcessor.events(this)
 
     override fun onInit() {
         val config = loadConfig()
 
         translator = createTranslator(config.translator)
+        templates = TemplateManagerImpl(config.templates).also(::addListener)
 
         placeholders = PlaceholderPipelineImpl(this)
-        placeholders.register("template", TemplateProcessor(placeholders, config.templates).also(::addListener))
+        placeholders.register("template", TemplateProcessor(placeholders, templates).also(::addListener))
         placeholders.register("argument", ArgumentProcessor)
         placeholders.register("player", PlayerProcessor)
         placeholders.register("permission", PermissionProcessor)
@@ -105,7 +109,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 withClassLoader(javaClass.classLoader)
                 addDefaults()
                 addPathSource(file)
-                addDecoder(PlaceholderFilterDecoder())
+                addDecoder(TemplateFilterDecoder())
                 withReport()
                 withReportPrintFn(logger::debug)
                 addParameterMapper(KebabCaseParamMapper)

@@ -23,14 +23,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.placeholder.template
 
-import com.xpdustry.flex.hooks.HooksConfig
-import com.xpdustry.flex.placeholder.template.TemplateConfig
-import com.xpdustry.flex.translator.TranslatorConfig
-
-internal data class FlexConfig(
-    val translator: TranslatorConfig = TranslatorConfig.None,
-    val hooks: HooksConfig = HooksConfig(),
-    val templates: TemplateConfig = emptyMap(),
-)
+internal typealias TemplateConfig = Map<String, List<TemplateStep>>
