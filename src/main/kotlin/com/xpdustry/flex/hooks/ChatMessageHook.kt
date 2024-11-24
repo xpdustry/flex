@@ -91,15 +91,16 @@ internal class ChatMessageHook(
 
         message = message.replace("\n", "")
         DistributorProvider.get().eventBus.post(PlayerChatEvent(audience.player, message))
+        val prefix = Vars.netServer.clientCommands.getPrefix()
 
         FlexScope.launch {
-            val isCommand = message.startsWith(Vars.netServer.clientCommands.getPrefix())
-            val forServer =
+            val isCommand = message.startsWith(prefix)
+            var forServer =
                 messages.pump(
                     MessageContext(
                         audience,
                         DistributorProvider.get().audienceProvider.server,
-                        message,
+                        if (isCommand && message.length >= prefix.length) message.drop(prefix.length) else message,
                         filter = true,
                         if (isCommand) MessageContext.Kind.COMMAND else MessageContext.Kind.CHAT,
                     ),
@@ -110,6 +111,7 @@ internal class ChatMessageHook(
             }
 
             if (isCommand) {
+                forServer = "$prefix$forServer"
                 root.info("<&fi{}: {}&fr>", "&lk${audience.player.plainName()}", "&lw$forServer")
                 Core.app.post {
                     val response = Vars.netServer.clientCommands.handleMessage(forServer, audience.player)
