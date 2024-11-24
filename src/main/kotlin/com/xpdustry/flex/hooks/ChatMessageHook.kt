@@ -32,6 +32,7 @@ import arc.util.Time
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
+import com.xpdustry.flex.message.FlexPlayerChatEvent
 import com.xpdustry.flex.message.MessageContext
 import com.xpdustry.flex.message.MessagePipeline
 import kotlinx.coroutines.future.await
