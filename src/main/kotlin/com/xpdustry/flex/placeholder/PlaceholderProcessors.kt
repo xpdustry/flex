@@ -32,7 +32,7 @@ import com.xpdustry.flex.processor.Processor
 internal val ArgumentProcessor =
     Processor<PlaceholderContext, String?> { ctx ->
         val parts = ctx.query.split("_", limit = 2)
-        if (parts.size != 2) return@Processor ""
+        if (parts.size != 2) return@Processor null
         val (namespace, name) = parts
         ctx.arguments[Key.of(namespace, name, Any::class.java)]?.toString()
     }
