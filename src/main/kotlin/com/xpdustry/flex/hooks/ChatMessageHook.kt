@@ -126,11 +126,15 @@ internal class ChatMessageHook(
 
             root.info("&fi{}: {}", "&lc${audience.player.plainName()}", "&lw${Strings.stripColors(forServer)}")
 
+            Core.app.post {
+                DistributorProvider.get().eventBus.post(FlexPlayerChatEvent(audience, forServer))
+            }
+
             messages.broadcast(
                 audience,
                 DistributorProvider.get().audienceProvider.players,
                 message,
-            )
+            ).await()
         }
     }
 
