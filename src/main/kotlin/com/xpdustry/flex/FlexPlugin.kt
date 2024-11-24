@@ -41,6 +41,7 @@ import com.xpdustry.flex.message.MessagePipeline
 import com.xpdustry.flex.message.MessagePipelineImpl
 import com.xpdustry.flex.message.TranslationProcessor
 import com.xpdustry.flex.placeholder.ArgumentProcessor
+import com.xpdustry.flex.placeholder.AudienceProcessor
 import com.xpdustry.flex.placeholder.PermissionProcessor
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.PlaceholderPipelineImpl
@@ -73,19 +74,19 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         templates = TemplateManagerImpl(config.templates).also(::addListener)
         templates.setDefaultTemplate(
             TemplateManager.JOIN_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[accent]%player:name_raw% has connected."))),
+            Template(listOf(TemplateStep("[accent]%audience:name_raw% has connected."))),
         )
         templates.setDefaultTemplate(
             TemplateManager.QUIT_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[accent]%player:name_raw% has disconnected."))),
+            Template(listOf(TemplateStep("[accent]%audience:name_raw% has disconnected."))),
         )
         templates.setDefaultTemplate(
             TemplateManager.NAME_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[%player:color%]%player:name%"))),
+            Template(listOf(TemplateStep("[%audience:color%]%audience:name%"))),
         )
         templates.setDefaultTemplate(
             TemplateManager.CHAT_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[coral][[[%player:color%]%player:name%[coral]]:[white] %argument:flex_message%"))),
+            Template(listOf(TemplateStep("[coral][[[%audience:color%]%audience:name%[coral]]:[white] %argument:flex_message%"))),
         )
 
         placeholders = PlaceholderPipelineImpl(this)
@@ -93,6 +94,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         placeholders.register("argument", ArgumentProcessor)
         placeholders.register("player", PlayerProcessor)
         placeholders.register("permission", PermissionProcessor)
+        placeholders.register("audience", AudienceProcessor)
 
         messages = MessagePipelineImpl(this, placeholders).also(::addListener)
         messages.register("admin_filter", Priority.HIGH, AdminFilterProcessor)

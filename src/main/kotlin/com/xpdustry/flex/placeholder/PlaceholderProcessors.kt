@@ -25,8 +25,12 @@
  */
 package com.xpdustry.flex.placeholder
 
+import arc.graphics.Color
+import arc.util.Strings
 import com.xpdustry.distributor.api.audience.PlayerAudience
+import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.key.Key
+import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.flex.processor.Processor
 
 internal val ArgumentProcessor =
@@ -49,8 +53,20 @@ internal val PlayerProcessor =
             "tile_y" -> player.tileY().toString()
             "world_x" -> player.getX().toString()
             "world_y" -> player.getY().toString()
-            "color" -> String.format("#%06X", player.color().rgb888())
-            "team_color" -> String.format("#%06X", player.team().color.rgb888())
+            "color" -> player.color().toHex()
+            "team_color" -> player.team().color.toHex()
+            else -> null
+        }
+    }
+
+internal val AudienceProcessor =
+    Processor<PlaceholderContext, String?> { ctx ->
+        when (ctx.query.lowercase()) {
+            "name" -> ctx.subject.metadata[StandardKeys.NAME]?.toString()
+            "name_raw" -> ctx.subject.metadata[StandardKeys.NAME]?.let(Strings::stripColors)
+            "name_display" -> ctx.subject.metadata[StandardKeys.DISPLAY_NAME]?.toString()
+            "color" -> ctx.subject.metadata[StandardKeys.COLOR]?.toHex()
+            "team_color" -> ctx.subject.metadata[StandardKeys.TEAM]?.color?.toHex()
             else -> null
         }
     }
@@ -59,3 +75,7 @@ internal val PermissionProcessor =
     Processor<PlaceholderContext, String?> { ctx ->
         if (ctx.subject.permissions.getPermission(ctx.query).asBoolean()) ctx.query else ""
     }
+
+private fun Color.toHex() = String.format("#%06X", rgb888())
+
+private fun ComponentColor.toHex() = String.format("#%06X", rgb)
