@@ -1,9 +1,6 @@
-templates:
-  mindustry_name:
-    - text: "[%player:color%]%player:name%"
-  mindustry_chat:
-    - text: "[coral][[[%player:color%]%player:name%[coral]]:[white] %argument:flex_message%"
-  mindustry_join:
-    - text: "[accent]%player:name_raw% has connected."
-  mindustry_quit:
-    - text: "[accent]%player:name_raw% has disconnected."
+hooks:
+  chat: true
+  join: true
+  quit: true
+  name:
+    enabled: true

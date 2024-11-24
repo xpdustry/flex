@@ -45,10 +45,12 @@ import com.xpdustry.flex.placeholder.PermissionProcessor
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.PlaceholderPipelineImpl
 import com.xpdustry.flex.placeholder.PlayerProcessor
+import com.xpdustry.flex.placeholder.template.Template
 import com.xpdustry.flex.placeholder.template.TemplateFilterDecoder
 import com.xpdustry.flex.placeholder.template.TemplateManager
 import com.xpdustry.flex.placeholder.template.TemplateManagerImpl
 import com.xpdustry.flex.placeholder.template.TemplateProcessor
+import com.xpdustry.flex.placeholder.template.TemplateStep
 import com.xpdustry.flex.translator.DeeplTranslator
 import com.xpdustry.flex.translator.LibreTranslateTranslator
 import com.xpdustry.flex.translator.Translator
@@ -67,7 +69,24 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         val config = loadConfig()
 
         translator = createTranslator(config.translator)
+
         templates = TemplateManagerImpl(config.templates).also(::addListener)
+        templates.setDefaultTemplate(
+            TemplateManager.JOIN_TEMPLATE_NAME,
+            Template(listOf(TemplateStep("[accent]%player:name_raw% has connected."))),
+        )
+        templates.setDefaultTemplate(
+            TemplateManager.QUIT_TEMPLATE_NAME,
+            Template(listOf(TemplateStep("[accent]%player:name_raw% has disconnected."))),
+        )
+        templates.setDefaultTemplate(
+            TemplateManager.NAME_TEMPLATE_NAME,
+            Template(listOf(TemplateStep("[%player:color%]%player:name%"))),
+        )
+        templates.setDefaultTemplate(
+            TemplateManager.CHAT_TEMPLATE_NAME,
+            Template(listOf(TemplateStep("[coral][[[%player:color%]%player:name%[coral]]:[white] %argument:flex_message%"))),
+        )
 
         placeholders = PlaceholderPipelineImpl(this)
         placeholders.register("template", TemplateProcessor(placeholders, templates).also(::addListener))

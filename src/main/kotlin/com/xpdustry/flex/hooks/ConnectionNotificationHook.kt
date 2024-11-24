@@ -30,6 +30,7 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
+import com.xpdustry.flex.placeholder.template.TemplateManager
 import mindustry.game.EventType
 import mindustry.gen.Player
 
@@ -39,12 +40,12 @@ internal class ConnectionNotificationHook(
 ) : PluginListener {
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
-        if (hooks.join) sendConnect(event.player, "mindustry_join")
+        if (hooks.join) sendConnect(event.player, TemplateManager.JOIN_TEMPLATE_NAME)
     }
 
     @EventHandler
     internal fun onPlayerQuit(event: EventType.PlayerLeave) {
-        if (hooks.quit) sendConnect(event.player, "mindustry_quit")
+        if (hooks.quit) sendConnect(event.player, TemplateManager.QUIT_TEMPLATE_NAME)
     }
 
     private fun sendConnect(

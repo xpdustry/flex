@@ -34,4 +34,11 @@ public interface TemplateManager {
         name: String,
         template: Template,
     )
+
+    public companion object {
+        public const val JOIN_TEMPLATE_NAME: String = "mindustry_join"
+        public const val QUIT_TEMPLATE_NAME: String = "mindustry_quit"
+        public const val CHAT_TEMPLATE_NAME: String = "mindustry_chat"
+        public const val NAME_TEMPLATE_NAME: String = "mindustry_name"
+    }
 }

@@ -32,6 +32,7 @@ import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
+import com.xpdustry.flex.placeholder.template.TemplateManager
 import mindustry.Vars
 import mindustry.gen.Groups
 import org.slf4j.LoggerFactory
@@ -59,7 +60,10 @@ internal class PlayerNameHook(
             try {
                 val result =
                     placeholders.pump(
-                        PlaceholderContext(DistributorProvider.get().audienceProvider.getPlayer(player), "%template:mindustry_name%"),
+                        PlaceholderContext(
+                            DistributorProvider.get().audienceProvider.getPlayer(player),
+                            "%template:${TemplateManager.NAME_TEMPLATE_NAME}%",
+                        ),
                     )
                 if (result.length > 256) {
                     logger.warn("Possible name overflow for player {} ({}), resetting.", player.name(), player.uuid())
