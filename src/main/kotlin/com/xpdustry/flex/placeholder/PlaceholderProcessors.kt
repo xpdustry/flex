@@ -50,6 +50,7 @@ internal val PlayerProcessor =
             "world_x" -> player.getX().toString()
             "world_y" -> player.getY().toString()
             "color" -> String.format("#%06X", player.color().rgb888())
+            "team_color" -> String.format("#%06X", player.team().color.rgb888())
             else -> null
         }
     }
