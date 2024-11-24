@@ -30,7 +30,6 @@ import arc.util.CommandHandler.ResponseType
 import arc.util.Strings
 import arc.util.Time
 import com.xpdustry.distributor.api.DistributorProvider
-import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.message.MessageContext
@@ -64,7 +63,7 @@ internal class ChatMessageHook(
             return
         }
 
-        val audience = DistributorProvider.get().audienceProvider.getPlayer(connection.player) as PlayerAudience
+        val audience = DistributorProvider.get().audienceProvider.getPlayer(connection.player)
         var message = packet.message
 
         // do not receive chat messages from clients that are too young or not registered
