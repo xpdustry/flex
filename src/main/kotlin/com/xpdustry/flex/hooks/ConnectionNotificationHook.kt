@@ -33,11 +33,16 @@ import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.template.TemplateManager
 import mindustry.game.EventType
 import mindustry.gen.Player
+import mindustry.net.Administration
 
 internal class ConnectionNotificationHook(
     private val placeholders: PlaceholderPipeline,
     private val hooks: HooksConfig,
 ) : PluginListener {
+    override fun onPluginInit() {
+        if (hooks.join || hooks.quit) Administration.Config.showConnectMessages.set(false)
+    }
+
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         if (hooks.join) sendConnect(event.player, TemplateManager.JOIN_TEMPLATE_NAME)
