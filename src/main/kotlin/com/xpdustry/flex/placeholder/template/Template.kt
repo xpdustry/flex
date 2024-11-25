@@ -64,7 +64,7 @@ private data class Placeholder(val placeholder: String) : TemplateFilter {
     override fun accepts(context: PlaceholderContext): Boolean =
         FlexAPI.get().placeholders
             .pump(context.copy(query = "%$placeholder%"))
-            .isNotEmpty()
+            .let { it.isNotEmpty() && it != "%$placeholder%" }
 }
 
 private data class Any(val filters: List<TemplateFilter>) : TemplateFilter {

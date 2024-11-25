@@ -96,7 +96,7 @@ internal class MessagePipelineImpl(
                     val formatted =
                         placeholders.pump(
                             PlaceholderContext(
-                                target,
+                                sender,
                                 "%template:$template%",
                                 MutableKeyContainer.create().apply { set(FlexKeys.MESSAGE, processed) },
                             ),
