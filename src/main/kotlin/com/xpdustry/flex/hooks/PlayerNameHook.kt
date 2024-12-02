@@ -25,8 +25,7 @@
  */
 package com.xpdustry.flex.hooks
 
-import com.xpdustry.distributor.api.DistributorProvider
-import com.xpdustry.distributor.api.collection.MindustryCollections
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
@@ -45,7 +44,7 @@ internal class PlayerNameHook(
 ) : PluginListener {
     override fun onPluginInit() {
         if (config.name.enabled) {
-            DistributorProvider.get().pluginScheduler
+            Distributor.get().pluginScheduler
                 .schedule(plugin)
                 .async(false)
                 .delay(1, MindustryTimeUnit.SECONDS)
@@ -56,12 +55,12 @@ internal class PlayerNameHook(
 
     private fun onNameUpdate() {
         if (!Vars.state.isGame) return
-        MindustryCollections.immutableList(Groups.player).forEach { player ->
+        Groups.player.forEach { player ->
             try {
                 val result =
                     placeholders.pump(
                         PlaceholderContext(
-                            DistributorProvider.get().audienceProvider.getPlayer(player),
+                            Distributor.get().audienceProvider.getPlayer(player),
                             "%template:${TemplateManager.NAME_TEMPLATE_NAME}%",
                         ),
                     )

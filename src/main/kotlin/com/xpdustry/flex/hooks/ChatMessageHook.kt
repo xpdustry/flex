@@ -29,7 +29,7 @@ import arc.Core
 import arc.util.CommandHandler.ResponseType
 import arc.util.Strings
 import arc.util.Time
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.message.FlexPlayerChatEvent
@@ -64,7 +64,7 @@ internal class ChatMessageHook(
             return
         }
 
-        val audience = DistributorProvider.get().audienceProvider.getPlayer(connection.player)
+        val audience = Distributor.get().audienceProvider.getPlayer(connection.player)
         var message = packet.message
 
         // do not receive chat messages from clients that are too young or not registered
@@ -90,7 +90,7 @@ internal class ChatMessageHook(
         }
 
         message = message.replace("\n", "")
-        DistributorProvider.get().eventBus.post(PlayerChatEvent(audience.player, message))
+        Distributor.get().eventBus.post(PlayerChatEvent(audience.player, message))
         val prefix = Vars.netServer.clientCommands.getPrefix()
 
         FlexScope.launch {
@@ -99,7 +99,7 @@ internal class ChatMessageHook(
                 messages.pump(
                     MessageContext(
                         audience,
-                        DistributorProvider.get().audienceProvider.server,
+                        Distributor.get().audienceProvider.server,
                         if (isCommand && message.length >= prefix.length) message.drop(prefix.length) else message,
                         filter = true,
                         if (isCommand) MessageContext.Kind.COMMAND else MessageContext.Kind.CHAT,
@@ -129,14 +129,10 @@ internal class ChatMessageHook(
             root.info("&fi{}: {}", "&lc${audience.player.plainName()}", "&lw${Strings.stripColors(forServer)}")
 
             Core.app.post {
-                DistributorProvider.get().eventBus.post(FlexPlayerChatEvent(audience, forServer))
+                Distributor.get().eventBus.post(FlexPlayerChatEvent(audience, forServer))
             }
 
-            messages.broadcast(
-                audience,
-                DistributorProvider.get().audienceProvider.players,
-                message,
-            ).await()
+            messages.broadcast(audience, Distributor.get().audienceProvider.players, message).await()
         }
     }
 

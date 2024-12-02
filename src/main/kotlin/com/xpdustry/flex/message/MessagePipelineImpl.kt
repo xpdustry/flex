@@ -25,7 +25,7 @@
  */
 package com.xpdustry.flex.message
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.key.MutableKeyContainer
@@ -107,8 +107,8 @@ internal class MessagePipelineImpl(
                     }
 
                     target.sendMessage(
-                        DistributorProvider.get().mindustryComponentDecoder.decode(formatted),
-                        DistributorProvider.get().mindustryComponentDecoder.decode(processed),
+                        Distributor.get().mindustryComponentDecoder.decode(formatted),
+                        Distributor.get().mindustryComponentDecoder.decode(processed),
                         sender.takeUnless(::isFooClient) ?: Audience.empty(),
                     )
                 }

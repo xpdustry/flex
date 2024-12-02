@@ -26,8 +26,8 @@
 package com.xpdustry.flex.placeholder
 
 import arc.graphics.Color
-import arc.util.Strings
 import com.xpdustry.distributor.api.audience.PlayerAudience
+import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
 import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.distributor.api.key.StandardKeys
@@ -46,9 +46,8 @@ internal val PlayerProcessor =
         if (ctx.subject !is PlayerAudience) return@Processor ""
         val player = ctx.subject.player
         when (ctx.query.lowercase()) {
-            "name" -> player.info.lastName
-            "name_raw" -> player.info.plainLastName()
-            "name_display" -> player.name()
+            "name" -> player.info.plainLastName()
+            "name_colored" -> player.name()
             "tile_x" -> player.tileX().toString()
             "tile_y" -> player.tileY().toString()
             "world_x" -> player.getX().toString()
@@ -63,8 +62,9 @@ internal val AudienceProcessor =
     Processor<PlaceholderContext, String?> { ctx ->
         when (ctx.query.lowercase()) {
             "name" -> ctx.subject.metadata[StandardKeys.NAME]?.toString()
-            "name_raw" -> ctx.subject.metadata[StandardKeys.NAME]?.let(Strings::stripColors)
-            "name_display" -> ctx.subject.metadata[StandardKeys.DISPLAY_NAME]?.toString()
+            "name_colored" ->
+                ctx.subject.metadata[StandardKeys.DECORATED_NAME]
+                    ?.let { ComponentStringBuilder.mindustry(ctx.subject.metadata).append(it).toString() }
             "color" -> ctx.subject.metadata[StandardKeys.COLOR]?.toHex()
             "team_color" -> ctx.subject.metadata[StandardKeys.TEAM]?.color?.toHex()
             else -> null

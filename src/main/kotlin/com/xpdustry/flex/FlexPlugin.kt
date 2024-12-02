@@ -74,19 +74,19 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         templates = TemplateManagerImpl(config.templates).also(::addListener)
         templates.setDefaultTemplate(
             TemplateManager.JOIN_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[accent]%audience:name_raw% has connected."))),
+            Template(listOf(TemplateStep("[accent]%audience:name% has connected."))),
         )
         templates.setDefaultTemplate(
             TemplateManager.QUIT_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[accent]%audience:name_raw% has disconnected."))),
+            Template(listOf(TemplateStep("[accent]%audience:name% has disconnected."))),
         )
         templates.setDefaultTemplate(
             TemplateManager.NAME_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[%audience:color%]%audience:name%"))),
+            Template(listOf(TemplateStep("[%audience:color%]%audience:name_colored%"))),
         )
         templates.setDefaultTemplate(
             TemplateManager.CHAT_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[coral][[[%audience:color%]%audience:name%[coral]]:[white] %argument:flex_message%"))),
+            Template(listOf(TemplateStep("[coral][[[%audience:color%]%audience:name_colored%[coral]]:[white] %argument:flex_message%"))),
         )
 
         placeholders = PlaceholderPipelineImpl(this)

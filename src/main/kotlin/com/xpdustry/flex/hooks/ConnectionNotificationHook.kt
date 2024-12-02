@@ -25,7 +25,7 @@
  */
 package com.xpdustry.flex.hooks
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.placeholder.PlaceholderContext
@@ -56,11 +56,11 @@ internal class ConnectionNotificationHook(
     private fun sendConnect(
         player: Player,
         template: String,
-    ) = DistributorProvider.get().audienceProvider.players.sendMessage(
-        DistributorProvider.get()
+    ) = Distributor.get().audienceProvider.players.sendMessage(
+        Distributor.get()
             .mindustryComponentDecoder.decode(
                 placeholders.pump(
-                    PlaceholderContext(DistributorProvider.get().audienceProvider.getPlayer(player), "%template:$template%"),
+                    PlaceholderContext(Distributor.get().audienceProvider.getPlayer(player), "%template:$template%"),
                 ),
             ),
     )
