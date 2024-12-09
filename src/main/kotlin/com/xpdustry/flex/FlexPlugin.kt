@@ -98,7 +98,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
 
         messages = MessagePipelineImpl(this, placeholders).also(::addListener)
         messages.register("admin_filter", Priority.HIGH, AdminFilterProcessor)
-        messages.register("flex_translator", Priority.LOW, TranslationProcessor(placeholders, translator))
+        messages.register("translator", Priority.LOW, TranslationProcessor(translator, placeholders))
 
         addListener(ChatMessageHook(messages, config.hooks))
         addListener(ConnectionNotificationHook(placeholders, config.hooks))

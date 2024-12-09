@@ -45,7 +45,7 @@ internal class CachingTranslator(private val translator: Translator, ticker: Tic
 
     override fun translate(
         text: String,
-        source: Locale,
+        source: Locale?,
         target: Locale,
     ): CompletableFuture<String> =
         cache.get(TranslationKey(text, source, target))

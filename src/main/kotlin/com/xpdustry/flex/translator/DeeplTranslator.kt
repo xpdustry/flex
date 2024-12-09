@@ -33,7 +33,6 @@ import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.util.Locale
@@ -52,31 +51,34 @@ internal class DeeplTranslator(config: TranslatorConfig.DeepL, version: String) 
     private lateinit var targetLanguages: List<Locale>
 
     override fun onPluginInit() {
-        runBlocking(Dispatchers.IO) {
-            sourceLanguages = fetchLanguages(LanguageType.Source)
-            targetLanguages = fetchLanguages(LanguageType.Target)
-        }
+        sourceLanguages = fetchLanguages(LanguageType.Source)
+        targetLanguages = fetchLanguages(LanguageType.Target)
     }
 
     override fun translate(
         text: String,
-        source: Locale,
+        source: Locale?,
         target: Locale,
     ) = FlexScope.future {
         if (text.isBlank()) {
             return@future text
-        } else if (source.language == "router" || target.language == "router") {
+        } else if (source?.language == "router" || target.language == "router") {
             return@future "router"
         }
 
         val sourceLocale =
-            findClosestLanguage(LanguageType.Source, source)
-                ?: throw UnsupportedLanguageException(source)
+            if (source == null) {
+                null
+            } else {
+                findClosestLanguage(LanguageType.Source, source)
+                    ?: throw UnsupportedLanguageException(source)
+            }
+
         val targetLocale =
             findClosestLanguage(LanguageType.Target, target)
                 ?: throw UnsupportedLanguageException(target)
 
-        if (sourceLocale.language == targetLocale.language) {
+        if (sourceLocale?.language == targetLocale.language) {
             return@future text
         }
 
@@ -85,7 +87,7 @@ internal class DeeplTranslator(config: TranslatorConfig.DeepL, version: String) 
         }
 
         withContext(Dispatchers.IO) {
-            translator.translateText(text, sourceLocale.language, targetLocale.toLanguageTag(), DEFAULT_OPTIONS).text
+            translator.translateText(text, sourceLocale?.language, targetLocale.toLanguageTag(), DEFAULT_OPTIONS).text
         }
     }
 
@@ -110,10 +112,7 @@ internal class DeeplTranslator(config: TranslatorConfig.DeepL, version: String) 
         }
     }
 
-    private suspend fun fetchLanguages(type: LanguageType) =
-        withContext(Dispatchers.IO) {
-            translator.getLanguages(type).map { Locale.forLanguageTag(it.code) }
-        }
+    private fun fetchLanguages(type: LanguageType) = translator.getLanguages(type).map { Locale.forLanguageTag(it.code) }
 
     private suspend fun fetchRateLimited() =
         withContext(Dispatchers.IO) {

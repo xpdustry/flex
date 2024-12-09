@@ -28,6 +28,7 @@ package com.xpdustry.flex.message
 import arc.util.Strings
 import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.key.StandardKeys
+import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.FlexKeys
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.placeholder.PlaceholderContext
@@ -43,20 +44,27 @@ import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import kotlin.time.Duration.Companion.seconds
 
-internal class TranslationProcessor(
-    private val placeholders: PlaceholderPipeline,
+public open class TranslationProcessor(
     private val translator: Translator,
+    private val placeholders: PlaceholderPipeline = FlexAPI.get().placeholders,
 ) : Processor<MessageContext, CompletableFuture<String>> {
-    override fun process(context: MessageContext) =
+    override fun process(context: MessageContext): CompletableFuture<String> {
+        val sourceLocale = context.sender.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
+        val targetLocale = context.target.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
+        return process(context, sourceLocale, targetLocale)
+    }
+
+    protected fun process(
+        context: MessageContext,
+        sourceLocale: Locale?,
+        targetLocale: Locale,
+    ): CompletableFuture<String> =
         FlexScope.future {
             if (context.kind != MessageContext.Kind.CHAT) {
                 return@future context.message
             }
 
-            val sourceLocale = context.sender.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
-            val targetLocale = context.target.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
-
-            if (!(translator.isSupportedLanguage(sourceLocale) && translator.isSupportedLanguage(targetLocale))) {
+            if (!((sourceLocale == null || translator.isSupportedLanguage(sourceLocale)) && translator.isSupportedLanguage(targetLocale))) {
                 return@future context.message
             }
 
@@ -70,7 +78,7 @@ internal class TranslationProcessor(
                     placeholders.pump(
                         PlaceholderContext(
                             context.sender,
-                            TRANSLATION_PLACEHOLDER,
+                            TRANSLATOR_PLACEHOLDER,
                             MutableKeyContainer.create().apply {
                                 set(FlexKeys.MESSAGE, context.message)
                                 set(FlexKeys.TRANSLATED_MESSAGE, result)
@@ -79,7 +87,7 @@ internal class TranslationProcessor(
                     )
                 if (raw == result.lowercase()) {
                     context.message
-                } else if (formatted.isBlank() || formatted == TRANSLATION_PLACEHOLDER) {
+                } else if (formatted.isBlank() || formatted == TRANSLATOR_PLACEHOLDER) {
                     "${context.message} [lightgray]($result)"
                 } else {
                     formatted
@@ -99,8 +107,8 @@ internal class TranslationProcessor(
             }
         }
 
-    companion object {
+    public companion object {
+        public const val TRANSLATOR_PLACEHOLDER: String = "%template:translator_format%"
         private val logger = LoggerFactory.getLogger(TranslationProcessor::class.java)
-        private const val TRANSLATION_PLACEHOLDER = "%template:translation_message%"
     }
 }

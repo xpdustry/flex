@@ -37,7 +37,7 @@ internal class TestTranslator : Translator {
 
     override fun translate(
         text: String,
-        source: Locale,
+        source: Locale?,
         target: Locale,
     ): CompletableFuture<String> =
         when (val result = results[TranslationKey(text, source, target)]) {

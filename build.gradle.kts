@@ -3,6 +3,8 @@ import com.xpdustry.toxopid.extension.anukeXpdustry
 import com.xpdustry.toxopid.spec.ModMetadata
 import com.xpdustry.toxopid.spec.ModPlatform
 import com.xpdustry.toxopid.task.GithubAssetDownload
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
@@ -44,6 +46,7 @@ repositories {
 dependencies {
     compileOnly(libs.kotlinx.coroutines.core)
     compileOnly(libs.kotlinx.coroutines.jdk8)
+    compileOnly(libs.kotlinx.serialization.json)
     compileOnly(toxopid.dependencies.mindustryCore)
     testImplementation(toxopid.dependencies.mindustryCore)
     compileOnly(toxopid.dependencies.arcCore)
@@ -111,7 +114,12 @@ spotless {
 }
 
 kotlin {
+    jvmToolchain(17)
     explicitApi()
+    compilerOptions {
+        jvmTarget = JvmTarget.JVM_17
+        apiVersion = KotlinVersion.KOTLIN_2_1
+    }
 }
 
 configurations.runtimeClasspath {
