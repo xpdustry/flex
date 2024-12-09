@@ -42,12 +42,10 @@ public abstract class AbstractPriorityProcessorPipeline<I, O>(
         priority: Priority,
         processor: Processor<I, O>,
     ) {
-        if (_processors.containsKey(name)) {
-            throw IllegalArgumentException("Processor with name $name already registered")
-        }
         val wrapped = PriorityProcessor(processor, priority)
+        val verb = if (_processors.containsKey(name)) "Replaced" else "Registered"
         _processors[name] = wrapped
-        plugin.logger.debug("Registered processor {} to {} with priority {}", name, identifier, priority)
+        plugin.logger.debug("$verb processor {} to {} with priority {}", name, identifier, priority)
     }
 
     public inner class PriorityProcessor(
