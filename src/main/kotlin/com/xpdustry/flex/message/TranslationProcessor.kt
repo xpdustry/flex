@@ -46,8 +46,10 @@ import kotlin.time.Duration.Companion.seconds
 
 public open class TranslationProcessor(
     private val translator: Translator,
-    private val placeholders: PlaceholderPipeline = FlexAPI.get().placeholders,
+    private val placeholders: PlaceholderPipeline,
 ) : Processor<MessageContext, CompletableFuture<String>> {
+    public constructor() : this(FlexAPI.get().translator, FlexAPI.get().placeholders)
+
     override fun process(context: MessageContext): CompletableFuture<String> {
         val sourceLocale = context.sender.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
         val targetLocale = context.target.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
