@@ -34,6 +34,8 @@ import com.xpdustry.flex.placeholder.template.TemplateManager
 import mindustry.game.EventType
 import mindustry.gen.Player
 import mindustry.net.Administration
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 internal class ConnectionNotificationHook(
     private val placeholders: PlaceholderPipeline,
@@ -45,12 +47,18 @@ internal class ConnectionNotificationHook(
 
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
-        if (hooks.join) sendConnect(event.player, TemplateManager.JOIN_TEMPLATE_NAME)
+        if (hooks.join) {
+            logger.info("&lb{}&fi&lk has connected. [&lb{}&fi&lk]", event.player.plainName(), event.player.uuid())
+            sendConnect(event.player, TemplateManager.JOIN_TEMPLATE_NAME)
+        }
     }
 
     @EventHandler
     internal fun onPlayerQuit(event: EventType.PlayerLeave) {
-        if (hooks.quit) sendConnect(event.player, TemplateManager.QUIT_TEMPLATE_NAME)
+        if (hooks.quit) {
+            logger.info("&lb{}&fi&lk has disconnected. [&lb{}&fi&lk]", event.player.plainName(), event.player.uuid())
+            sendConnect(event.player, TemplateManager.QUIT_TEMPLATE_NAME)
+        }
     }
 
     private fun sendConnect(
@@ -64,4 +72,8 @@ internal class ConnectionNotificationHook(
                 ),
             ),
     )
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
+    }
 }
