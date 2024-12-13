@@ -91,7 +91,8 @@ internal class DeeplTranslator(config: TranslatorConfig.DeepL, version: String) 
         }
     }
 
-    override fun isSupportedLanguage(locale: Locale): Boolean = findClosestLanguage(LanguageType.Source, locale) != null
+    override fun isSupportedLanguage(locale: Locale) =
+        locale == Translator.AUTO_DETECT || findClosestLanguage(LanguageType.Source, locale) != null
 
     private fun findClosestLanguage(
         type: LanguageType,
