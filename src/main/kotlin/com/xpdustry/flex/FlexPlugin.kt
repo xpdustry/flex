@@ -52,6 +52,7 @@ import com.xpdustry.flex.placeholder.template.TemplateManager
 import com.xpdustry.flex.placeholder.template.TemplateManagerImpl
 import com.xpdustry.flex.placeholder.template.TemplateProcessor
 import com.xpdustry.flex.placeholder.template.TemplateStep
+import com.xpdustry.flex.translator.CachingTranslator
 import com.xpdustry.flex.translator.DeeplTranslator
 import com.xpdustry.flex.translator.LibreTranslateTranslator
 import com.xpdustry.flex.translator.Translator
@@ -69,7 +70,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override fun onInit() {
         val config = loadConfig()
 
-        translator = createTranslator(config.translator)
+        translator = createTranslator(config.translator.backend)
 
         templates = TemplateManagerImpl(config.templates).also(::addListener)
         templates.setDefaultTemplate(
@@ -98,7 +99,9 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
 
         messages = MessagePipelineImpl(this, placeholders).also(::addListener)
         messages.register("admin_filter", Priority.HIGH, AdminFilterProcessor)
-        messages.register("translator", Priority.LOW, TranslationProcessor(translator, placeholders))
+        if (config.translator.registerMessageProcessor) {
+            messages.register("translator", Priority.LOW, TranslationProcessor(translator, placeholders))
+        }
 
         addListener(ChatMessageHook(messages, config.hooks))
         addListener(ConnectionNotificationHook(placeholders, config.hooks))
@@ -154,16 +157,23 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         return loader.loadConfigOrThrow()
     }
 
-    private fun createTranslator(config: TranslatorConfig): Translator {
+    private fun createTranslator(config: TranslatorConfig.Backend): Translator {
         val translator =
             when (config) {
-                is TranslatorConfig.None -> Translator.None
-                is TranslatorConfig.LibreTranslate -> LibreTranslateTranslator(config)
-                is TranslatorConfig.DeepL -> DeeplTranslator(config, metadata.version)
+                is TranslatorConfig.Backend.None -> Translator.None
+                is TranslatorConfig.Backend.LibreTranslate -> LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey.value)
+                is TranslatorConfig.Backend.DeepL -> DeeplTranslator(config.deeplApiKey.value, metadata.version)
+                is TranslatorConfig.Backend.Caching ->
+                    CachingTranslator(
+                        createTranslator(config.cachingTranslator),
+                        config.maximumSize,
+                        config.successRetention,
+                        config.failureRetention,
+                    )
             }
         if (translator is PluginListener) {
             addListener(translator)
         }
-        return Translator.caching(translator)
+        return translator
     }
 }

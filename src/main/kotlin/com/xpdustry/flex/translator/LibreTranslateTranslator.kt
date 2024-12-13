@@ -45,7 +45,8 @@ import java.nio.charset.Charset
 import java.util.Locale
 
 internal class LibreTranslateTranslator(
-    private val config: TranslatorConfig.LibreTranslate,
+    private val endpoint: URI,
+    private val apiKey: String,
 ) : Translator, PluginListener {
     private val http = HttpClient.newHttpClient()
     private lateinit var languages: Map<String, Set<String>>
@@ -72,20 +73,19 @@ internal class LibreTranslateTranslator(
             throw UnsupportedLanguageException(target)
         }
 
-        val uri =
-            URI(
-                "${config.ltEndpoint}/translate" +
-                    "?q=${URLEncoder.encode(text, Charset.defaultCharset())}" +
-                    "&source=${source.language}" +
-                    "&target=${target.language}" +
-                    "&api_key=${config.ltToken.value}" +
-                    "&format=text",
-            )
-
         val response =
             withContext(Dispatchers.IO) {
                 http.send(
-                    HttpRequest.newBuilder(uri)
+                    HttpRequest.newBuilder(
+                        createLibreUri(
+                            "translate",
+                            "q" to text,
+                            "source" to source.language,
+                            "target" to target.language,
+                            "api_key" to apiKey,
+                            "format" to "text",
+                        ),
+                    )
                         .header("Accept", "application/json")
                         .POST(BodyPublishers.noBody())
                         .build(),
@@ -106,7 +106,7 @@ internal class LibreTranslateTranslator(
     private fun fetchSupportedLanguages(): Map<String, Set<String>> {
         val response =
             http.send(
-                HttpRequest.newBuilder(URI("${config.ltEndpoint}/languages"))
+                HttpRequest.newBuilder(createLibreUri("languages"))
                     .header("Accept", "application/json")
                     .GET()
                     .build(),
@@ -123,5 +123,17 @@ internal class LibreTranslateTranslator(
                 }
             result + (AUTO_DETECT.language to result.keys.toSet())
         }
+    }
+
+    private fun createLibreUri(
+        path: String,
+        vararg params: Pair<String, String>,
+    ): URI {
+        var result = endpoint.toString()
+        if (!result.endsWith('/')) result += '/'
+        result += path
+        val query = params.joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, Charset.defaultCharset())}" }
+        if (query.isNotEmpty()) result += "?$query"
+        return URI.create(result)
     }
 }

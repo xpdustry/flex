@@ -29,7 +29,9 @@ import com.deepl.api.Formality
 import com.deepl.api.LanguageType
 import com.deepl.api.TextTranslationOptions
 import com.deepl.api.TranslatorOptions
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.plugin.PluginListener
+import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.FlexScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
@@ -37,11 +39,11 @@ import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.util.Locale
 
-internal class DeeplTranslator(config: TranslatorConfig.DeepL, version: String) :
+internal class DeeplTranslator(apiKey: String, version: String = (FlexAPI.get() as MindustryPlugin).metadata.version) :
     Translator, PluginListener {
     private val translator =
         com.deepl.api.Translator(
-            config.deeplToken.value,
+            apiKey,
             TranslatorOptions()
                 .setTimeout(Duration.ofSeconds(3L))
                 .setAppInfo("Flex", version),

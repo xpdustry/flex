@@ -36,6 +36,7 @@ public data class MessageContext
         val sender: Audience,
         val target: Audience,
         val message: String,
+        @get:JvmName("isFiltering")
         val filter: Boolean = false,
         val kind: Kind = Kind.CHAT,
     ) {

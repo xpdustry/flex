@@ -25,19 +25,28 @@
  */
 package com.xpdustry.flex.translator
 
-import com.sksamuel.hoplite.ConfigAlias
 import com.sksamuel.hoplite.Secret
 import java.net.URI
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
-internal sealed interface TranslatorConfig {
-    data object None : TranslatorConfig
+internal data class TranslatorConfig(
+    val backend: Backend = Backend.None,
+    val registerMessageProcessor: Boolean = true,
+) {
+    sealed interface Backend {
+        data object None : Backend
 
-    data class LibreTranslate(
-        @ConfigAlias("lt-endpoint") val ltEndpoint: URI,
-        @ConfigAlias("lt-token") val ltToken: Secret,
-    ) : TranslatorConfig
+        data class LibreTranslate(val ltEndpoint: URI, val ltApiKey: Secret) : Backend
 
-    data class DeepL(
-        @ConfigAlias("deepl-token") val deeplToken: Secret,
-    ) : TranslatorConfig
+        data class DeepL(val deeplApiKey: Secret) : Backend
+
+        data class Caching(
+            val successRetention: Duration = 10.minutes,
+            val failureRetention: Duration = 10.seconds,
+            val maximumSize: Int = 1000,
+            val cachingTranslator: Backend,
+        ) : Backend
+    }
 }

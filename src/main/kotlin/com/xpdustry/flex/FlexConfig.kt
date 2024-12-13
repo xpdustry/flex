@@ -30,7 +30,7 @@ import com.xpdustry.flex.placeholder.template.TemplateConfig
 import com.xpdustry.flex.translator.TranslatorConfig
 
 internal data class FlexConfig(
-    val translator: TranslatorConfig = TranslatorConfig.None,
+    val translator: TranslatorConfig = TranslatorConfig(),
     val hooks: HooksConfig = HooksConfig(),
     val templates: TemplateConfig = emptyMap(),
 )

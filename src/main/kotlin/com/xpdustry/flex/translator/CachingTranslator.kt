@@ -32,14 +32,25 @@ import com.github.benmanes.caffeine.cache.Ticker
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration
 
-internal class CachingTranslator(private val translator: Translator, ticker: Ticker = Ticker.systemTicker()) : Translator {
+internal class CachingTranslator(
+    private val translator: Translator,
+    maximumSize: Int,
+    val successRetention: Duration,
+    val failureRetention: Duration,
+    ticker: Ticker = Ticker.systemTicker(),
+) : Translator {
+    init {
+        require(maximumSize > 0) { "maximumSize must be positive" }
+        require(successRetention >= Duration.ZERO) { "successRetention must be non-negative" }
+        require(failureRetention >= Duration.ZERO) { "failureRetention must be non-negative" }
+    }
+
     private val cache =
         Caffeine.newBuilder()
-            .expireAfter(TranslationExpiry)
-            .maximumSize(1000)
+            .expireAfter(TranslationExpiry())
+            .maximumSize(maximumSize.toLong())
             .ticker(ticker)
             .buildAsync(TranslationLoader(translator))
 
@@ -68,17 +79,14 @@ internal class CachingTranslator(private val translator: Translator, ticker: Tic
                 .exceptionally { TranslationResult.Failure(it) }
     }
 
-    private data object TranslationExpiry : Expiry<TranslationKey, TranslationResult> {
-        private val FIVE_MINUTES_AS_NANOS = 5.minutes.inWholeNanoseconds
-        private val FIVE_SECONDS_AS_NANOS = 5.seconds.inWholeNanoseconds
-
+    private inner class TranslationExpiry : Expiry<TranslationKey, TranslationResult> {
         override fun expireAfterCreate(
             key: TranslationKey,
             value: TranslationResult,
             currentTime: Long,
         ) = when (value) {
-            is TranslationResult.Success -> FIVE_MINUTES_AS_NANOS
-            is TranslationResult.Failure -> FIVE_SECONDS_AS_NANOS
+            is TranslationResult.Success -> successRetention.inWholeNanoseconds
+            is TranslationResult.Failure -> failureRetention.inWholeNanoseconds
         }
 
         override fun expireAfterUpdate(
@@ -87,8 +95,8 @@ internal class CachingTranslator(private val translator: Translator, ticker: Tic
             currentTime: Long,
             currentDuration: Long,
         ) = when (value) {
-            is TranslationResult.Success -> FIVE_MINUTES_AS_NANOS
-            is TranslationResult.Failure -> FIVE_SECONDS_AS_NANOS
+            is TranslationResult.Success -> successRetention.inWholeNanoseconds
+            is TranslationResult.Failure -> failureRetention.inWholeNanoseconds
         }
 
         override fun expireAfterRead(
@@ -97,7 +105,7 @@ internal class CachingTranslator(private val translator: Translator, ticker: Tic
             currentTime: Long,
             currentDuration: Long,
         ) = when (value) {
-            is TranslationResult.Success -> FIVE_MINUTES_AS_NANOS
+            is TranslationResult.Success -> successRetention.inWholeNanoseconds
             is TranslationResult.Failure -> currentDuration
         }
     }
