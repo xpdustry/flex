@@ -57,7 +57,7 @@ import com.xpdustry.flex.translator.LibreTranslateTranslator
 import com.xpdustry.flex.translator.Translator
 import com.xpdustry.flex.translator.TranslatorConfig
 import kotlin.io.path.notExists
-import kotlin.io.path.outputStream
+import kotlin.io.path.writeText
 
 internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override lateinit var placeholders: PlaceholderPipeline
@@ -139,9 +139,16 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
 
         if (file.notExists()) {
             logger.warn("Configuration file does not exist, creating default configuration")
-            javaClass.classLoader.getResource("com/xpdustry/flex/default.yaml")!!
-                .openStream().buffered()
-                .use { i -> file.outputStream().buffered().use { o -> i.copyTo(o) } }
+            file.writeText(
+                """
+                hooks:
+                  chat: false
+                  join: false
+                  quit: false
+                  name:
+                    enabled: false    
+                """.trimIndent(),
+            )
         }
 
         return loader.loadConfigOrThrow()
@@ -155,7 +162,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 is TranslatorConfig.DeepL -> DeeplTranslator(config, metadata.version)
             }
         if (translator is PluginListener) {
-            addListener(translator as PluginListener)
+            addListener(translator)
         }
         return Translator.caching(translator)
     }

@@ -1,6 +1,0 @@
-hooks:
-  chat: true
-  join: true
-  quit: true
-  name:
-    enabled: true
