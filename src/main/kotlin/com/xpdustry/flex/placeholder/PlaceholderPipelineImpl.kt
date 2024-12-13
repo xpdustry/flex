@@ -55,6 +55,6 @@ internal class PlaceholderPipelineImpl(
     }
 
     companion object {
-        private val PLACEHOLDER_REGEX = Pattern.compile("%(?<name>\\w*)(:(?<query>\\w*)?)?%")
+        private val PLACEHOLDER_REGEX = Pattern.compile("%(?<name>\\w*)(:(?<query>[\\w:]*)?)?%")
     }
 }

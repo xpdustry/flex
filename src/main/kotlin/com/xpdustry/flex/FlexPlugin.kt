@@ -86,7 +86,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         )
         templates.setDefaultTemplate(
             TemplateManager.CHAT_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[coral][[[%audience:color%]%audience:name_colored%[coral]]:[white] %argument:flex_message%"))),
+            Template(listOf(TemplateStep("[coral][[[%audience:color%]%audience:name_colored%[coral]]:[white] %argument:flex:message%"))),
         )
 
         placeholders = PlaceholderPipelineImpl(this)
