@@ -58,7 +58,7 @@ public open class TranslationProcessor(
 
     protected fun process(
         context: MessageContext,
-        sourceLocale: Locale?,
+        sourceLocale: Locale,
         targetLocale: Locale,
     ): CompletableFuture<String> =
         FlexScope.future {
@@ -66,7 +66,7 @@ public open class TranslationProcessor(
                 return@future context.message
             }
 
-            if (!((sourceLocale == null || translator.isSupportedLanguage(sourceLocale)) && translator.isSupportedLanguage(targetLocale))) {
+            if (!(translator.isSupportedLanguage(sourceLocale) && translator.isSupportedLanguage(targetLocale))) {
                 return@future context.message
             }
 

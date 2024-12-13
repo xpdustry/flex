@@ -27,4 +27,4 @@ package com.xpdustry.flex.translator
 
 import java.util.Locale
 
-internal data class TranslationKey(val text: String, val source: Locale?, val target: Locale)
+internal data class TranslationKey(val text: String, val source: Locale, val target: Locale)
