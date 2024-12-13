@@ -57,17 +57,17 @@ internal class DeeplTranslator(config: TranslatorConfig.DeepL, version: String) 
 
     override fun translate(
         text: String,
-        source: Locale?,
+        source: Locale,
         target: Locale,
     ) = FlexScope.future {
         if (text.isBlank()) {
             return@future text
-        } else if (source?.language == "router" || target.language == "router") {
+        } else if (source.language == "router" || target.language == "router") {
             return@future "router"
         }
 
         val sourceLocale =
-            if (source == null) {
+            if (source == Translator.AUTO_DETECT) {
                 null
             } else {
                 findClosestLanguage(LanguageType.Source, source)

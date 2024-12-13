@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture
 public interface Translator {
     public fun translate(
         text: String,
-        source: Locale?,
+        source: Locale,
         target: Locale,
     ): CompletableFuture<String>
 
@@ -40,7 +40,7 @@ public interface Translator {
     public object None : Translator {
         override fun translate(
             text: String,
-            source: Locale?,
+            source: Locale,
             target: Locale,
         ): CompletableFuture<String> = CompletableFuture.failedFuture(UnsupportedLanguageException(target))
 
@@ -48,6 +48,9 @@ public interface Translator {
     }
 
     public companion object {
+        @JvmStatic
+        public val AUTO_DETECT: Locale = Locale("auto")
+
         @JvmStatic
         public fun caching(translator: Translator): Translator = CachingTranslator(translator)
     }

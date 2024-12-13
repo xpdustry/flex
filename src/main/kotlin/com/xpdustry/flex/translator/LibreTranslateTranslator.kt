@@ -27,6 +27,7 @@ package com.xpdustry.flex.translator
 
 import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
+import com.xpdustry.flex.translator.Translator.Companion.AUTO_DETECT
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withContext
@@ -54,12 +55,6 @@ internal class LibreTranslateTranslator(
     }
 
     override fun translate(
-        text: String,
-        source: Locale?,
-        target: Locale,
-    ) = translate0(text, source ?: AUTO_DETECT, target)
-
-    private fun translate0(
         text: String,
         source: Locale,
         target: Locale,
@@ -128,9 +123,5 @@ internal class LibreTranslateTranslator(
                 }
             result + (AUTO_DETECT.language to result.keys.toSet())
         }
-    }
-
-    companion object {
-        private val AUTO_DETECT = Locale("auto")
     }
 }
