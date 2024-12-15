@@ -47,7 +47,7 @@ internal class LibreTranslateTranslator(
     private val apiKey: String,
 ) : Translator, PluginListener {
     private val http = HttpClient.newHttpClient()
-    private lateinit var languages: Map<String, Set<String>>
+    internal lateinit var languages: Map<String, Set<String>>
 
     override fun onPluginInit() {
         languages = fetchSupportedLanguages()

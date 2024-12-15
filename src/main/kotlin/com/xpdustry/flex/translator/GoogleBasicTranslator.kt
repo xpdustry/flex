@@ -45,7 +45,7 @@ internal class GoogleBasicTranslator(
     private val apiKey: String,
 ) : Translator, PluginListener {
     private val http = HttpClient.newHttpClient()
-    private lateinit var supported: Set<Locale>
+    internal lateinit var supported: Set<Locale>
 
     override fun onPluginInit() {
         supported = fetchSupportedLanguages()

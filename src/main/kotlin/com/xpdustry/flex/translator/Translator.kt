@@ -54,7 +54,7 @@ public interface Translator {
         public val AUTO_DETECT: Locale = Locale("auto")
 
         @JvmStatic
-        public fun deepl(apiKey: String): Translator = DeeplTranslator(apiKey)
+        public fun deepL(apiKey: String): Translator = DeepLTranslator(apiKey)
 
         @JvmStatic
         public fun googleBasic(apiKey: String): Translator = GoogleBasicTranslator(apiKey)

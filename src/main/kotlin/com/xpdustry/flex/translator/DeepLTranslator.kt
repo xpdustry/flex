@@ -39,7 +39,7 @@ import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.util.Locale
 
-internal class DeeplTranslator(apiKey: String, version: String = (FlexAPI.get() as MindustryPlugin).metadata.version) :
+internal class DeepLTranslator(apiKey: String, version: String = (FlexAPI.get() as MindustryPlugin).metadata.version) :
     Translator, PluginListener {
     private val translator =
         com.deepl.api.Translator(
@@ -49,8 +49,8 @@ internal class DeeplTranslator(apiKey: String, version: String = (FlexAPI.get() 
                 .setAppInfo("Flex", version),
         )
 
-    private lateinit var sourceLanguages: List<Locale>
-    private lateinit var targetLanguages: List<Locale>
+    internal lateinit var sourceLanguages: List<Locale>
+    internal lateinit var targetLanguages: List<Locale>
 
     override fun onPluginInit() {
         sourceLanguages = fetchLanguages(LanguageType.Source)
