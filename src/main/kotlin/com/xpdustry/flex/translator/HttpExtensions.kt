@@ -25,30 +25,27 @@
  */
 package com.xpdustry.flex.translator
 
-import com.sksamuel.hoplite.Secret
 import java.net.URI
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
+import java.net.URLEncoder
 
-internal data class TranslatorConfig(
-    val backend: Backend = Backend.None,
-    val registerMessageProcessor: Boolean = true,
-) {
-    sealed interface Backend {
-        data object None : Backend
+internal fun createApiUri(
+    endpoint: URI,
+    parameters: Map<String, String>,
+) = createApiUri(endpoint, null, parameters)
 
-        data class LibreTranslate(val ltEndpoint: URI, val ltApiKey: Secret) : Backend
-
-        data class DeepL(val deeplApiKey: Secret) : Backend
-
-        data class GoogleBasic(val googleBasicApiKey: Secret) : Backend
-
-        data class Caching(
-            val successRetention: Duration = 10.minutes,
-            val failureRetention: Duration = 10.seconds,
-            val maximumSize: Int = 1000,
-            val cachingTranslator: Backend,
-        ) : Backend
+internal fun createApiUri(
+    endpoint: URI,
+    path: String? = null,
+    parameters: Map<String, String> = emptyMap(),
+): URI {
+    var result = endpoint.toString()
+    if (path == null) {
+        if (result.endsWith('/')) result = result.dropLast(1)
+    } else {
+        if (!result.endsWith('/')) result += '/'
+        result += path
     }
+    val query = parameters.entries.joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, Charsets.UTF_8)}" }
+    if (query.isNotEmpty()) result += "?$query"
+    return URI.create(result)
 }

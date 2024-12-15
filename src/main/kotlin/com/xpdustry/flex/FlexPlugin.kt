@@ -54,6 +54,7 @@ import com.xpdustry.flex.placeholder.template.TemplateProcessor
 import com.xpdustry.flex.placeholder.template.TemplateStep
 import com.xpdustry.flex.translator.CachingTranslator
 import com.xpdustry.flex.translator.DeeplTranslator
+import com.xpdustry.flex.translator.GoogleBasicTranslator
 import com.xpdustry.flex.translator.LibreTranslateTranslator
 import com.xpdustry.flex.translator.Translator
 import com.xpdustry.flex.translator.TranslatorConfig
@@ -163,6 +164,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 is TranslatorConfig.Backend.None -> Translator.None
                 is TranslatorConfig.Backend.LibreTranslate -> LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey.value)
                 is TranslatorConfig.Backend.DeepL -> DeeplTranslator(config.deeplApiKey.value, metadata.version)
+                is TranslatorConfig.Backend.GoogleBasic -> GoogleBasicTranslator(config.googleBasicApiKey.value)
                 is TranslatorConfig.Backend.Caching ->
                     CachingTranslator(
                         createTranslator(config.cachingTranslator),

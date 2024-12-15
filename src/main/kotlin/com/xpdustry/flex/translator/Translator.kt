@@ -57,6 +57,9 @@ public interface Translator {
         public fun deepl(apiKey: String): Translator = DeeplTranslator(apiKey)
 
         @JvmStatic
+        public fun googleBasic(apiKey: String): Translator = GoogleBasicTranslator(apiKey)
+
+        @JvmStatic
         public fun libreTranslate(
             endpoint: URI,
             apiKey: String,

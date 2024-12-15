@@ -36,12 +36,10 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.net.URI
-import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpRequest.BodyPublishers
 import java.net.http.HttpResponse.BodyHandlers
-import java.nio.charset.Charset
 import java.util.Locale
 
 internal class LibreTranslateTranslator(
@@ -77,13 +75,16 @@ internal class LibreTranslateTranslator(
             withContext(Dispatchers.IO) {
                 http.send(
                     HttpRequest.newBuilder(
-                        createLibreUri(
+                        createApiUri(
+                            endpoint,
                             "translate",
-                            "q" to text,
-                            "source" to source.language,
-                            "target" to target.language,
-                            "api_key" to apiKey,
-                            "format" to "text",
+                            mapOf(
+                                "q" to text,
+                                "source" to source.language,
+                                "target" to target.language,
+                                "api_key" to apiKey,
+                                "format" to "text",
+                            ),
                         ),
                     )
                         .header("Accept", "application/json")
@@ -106,7 +107,7 @@ internal class LibreTranslateTranslator(
     private fun fetchSupportedLanguages(): Map<String, Set<String>> {
         val response =
             http.send(
-                HttpRequest.newBuilder(createLibreUri("languages"))
+                HttpRequest.newBuilder(createApiUri(endpoint, "languages"))
                     .header("Accept", "application/json")
                     .GET()
                     .build(),
@@ -123,17 +124,5 @@ internal class LibreTranslateTranslator(
                 }
             result + (AUTO_DETECT.language to result.keys.toSet())
         }
-    }
-
-    private fun createLibreUri(
-        path: String,
-        vararg params: Pair<String, String>,
-    ): URI {
-        var result = endpoint.toString()
-        if (!result.endsWith('/')) result += '/'
-        result += path
-        val query = params.joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, Charset.defaultCharset())}" }
-        if (query.isNotEmpty()) result += "?$query"
-        return URI.create(result)
     }
 }
