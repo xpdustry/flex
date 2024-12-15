@@ -3,7 +3,7 @@
   "displayName": "FlexPlugin",
   "author": "xpdustry",
   "description": "Flex on your friends with awesome chat tags.",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "minGameVersion": "146",
   "hidden": true,
   "java": true,
