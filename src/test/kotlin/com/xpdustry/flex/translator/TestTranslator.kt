@@ -51,6 +51,4 @@ internal class TestTranslator : Translator {
             }
             null -> CompletableFuture.failedFuture(UnsupportedOperationException("No result for $text"))
         }
-
-    override fun isSupportedLanguage(locale: Locale): Boolean = true
 }

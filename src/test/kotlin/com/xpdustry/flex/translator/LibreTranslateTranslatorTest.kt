@@ -25,6 +25,7 @@
  */
 package com.xpdustry.flex.translator
 
+import com.xpdustry.flex.util.assertDoesNotThrowsAndReturns
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
@@ -36,8 +37,10 @@ class LibreTranslateTranslatorTest {
     @EnabledIfEnvironmentVariable(named = API_KEY_ENV, matches = ".+")
     @Test
     fun test() {
-        val translator = LibreTranslateTranslator(URI(System.getenv(ENDPOINT_ENV)), System.getenv(API_KEY_ENV))
-        Assertions.assertDoesNotThrow { translator.onPluginInit() }
+        val translator =
+            assertDoesNotThrowsAndReturns {
+                LibreTranslateTranslator(URI(System.getenv(ENDPOINT_ENV)), System.getenv(API_KEY_ENV))
+            }
         Assertions.assertTrue(translator.languages.isNotEmpty())
         Assertions.assertTrue(translator.languages.values.flatten().isNotEmpty())
         Assertions.assertDoesNotThrow {

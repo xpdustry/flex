@@ -25,7 +25,6 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
@@ -43,13 +42,9 @@ import java.util.concurrent.CompletableFuture
 
 internal class GoogleBasicTranslator(
     private val apiKey: String,
-) : Translator, PluginListener {
+) : Translator {
     private val http = HttpClient.newHttpClient()
-    internal lateinit var supported: Set<Locale>
-
-    override fun onPluginInit() {
-        supported = fetchSupportedLanguages()
-    }
+    internal val supported: Set<Locale> = fetchSupportedLanguages()
 
     override fun translate(
         text: String,
@@ -61,6 +56,10 @@ internal class GoogleBasicTranslator(
                 return@future "router"
             } else if (text.isBlank() || source.language == target.language) {
                 return@future text
+            } else if (source != Translator.AUTO_DETECT && source !in supported) {
+                throw UnsupportedLanguageException(target)
+            } else if (target !in supported) {
+                throw UnsupportedLanguageException(target)
             }
 
             val parameters =
@@ -98,8 +97,6 @@ internal class GoogleBasicTranslator(
                 .jsonPrimitive
                 .content
         }
-
-    override fun isSupportedLanguage(locale: Locale) = locale in supported
 
     private fun fetchSupportedLanguages(): Set<Locale> {
         val response =

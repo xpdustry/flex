@@ -23,39 +23,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.translator
+package com.xpdustry.flex.util
 
-import com.xpdustry.flex.FlexScope
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.future.future
-import org.slf4j.LoggerFactory
-import java.util.Locale
-import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.function.ThrowingSupplier
 
-internal class RollingTranslator(
-    private val translators: List<Translator>,
-    private val fallback: Translator,
-) : Translator {
-    private val cursor = AtomicInteger(0)
-
-    override fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ) = FlexScope.future {
-        val cursor = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 }
-        repeat(translators.size) {
-            val translator = translators[(cursor + it) % translators.size]
-            try {
-                return@future translator.translate(text, source, target).await()
-            } catch (e: Exception) {
-                logger.debug("Translator {} failed", translator, e)
-            }
-        }
-        return@future fallback.translate(text, source, target).await()
-    }
-
-    companion object {
-        private val logger = LoggerFactory.getLogger(RollingTranslator::class.java)
-    }
-}
+fun <T> assertDoesNotThrowsAndReturns(block: () -> T) = Assertions.assertDoesNotThrow(ThrowingSupplier(block))

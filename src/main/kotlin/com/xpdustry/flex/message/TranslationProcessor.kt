@@ -36,6 +36,7 @@ import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.processor.Processor
 import com.xpdustry.flex.translator.RateLimitedException
 import com.xpdustry.flex.translator.Translator
+import com.xpdustry.flex.translator.UnsupportedLanguageException
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withTimeout
@@ -66,10 +67,6 @@ public open class TranslationProcessor(
                 return@future context.message
             }
 
-            if (!(translator.isSupportedLanguage(sourceLocale) && translator.isSupportedLanguage(targetLocale))) {
-                return@future context.message
-            }
-
             val raw = Strings.stripColors(context.message).lowercase()
             try {
                 val result =
@@ -96,6 +93,8 @@ public open class TranslationProcessor(
                 }
             } catch (e: RateLimitedException) {
                 logger.debug("The {} translator is rate limited", translator.javaClass.simpleName)
+                context.message
+            } catch (e: UnsupportedLanguageException) {
                 context.message
             } catch (e: Exception) {
                 logger.error(

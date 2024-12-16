@@ -35,7 +35,7 @@ import java.util.concurrent.Executor
 import kotlin.time.Duration
 
 internal class CachingTranslator(
-    private val translator: Translator,
+    translator: Translator,
     maximumSize: Int,
     val successRetention: Duration,
     val failureRetention: Duration,
@@ -67,16 +67,14 @@ internal class CachingTranslator(
                 }
             }
 
-    override fun isSupportedLanguage(locale: Locale): Boolean = translator.isSupportedLanguage(locale)
-
     private class TranslationLoader(private val translator: Translator) : AsyncCacheLoader<TranslationKey, TranslationResult> {
         override fun asyncLoad(
             key: TranslationKey,
             executor: Executor,
         ): CompletableFuture<TranslationResult> =
             translator.translate(key.text, key.source, key.target)
-                .thenApply<TranslationResult> { TranslationResult.Success(it) }
-                .exceptionally { TranslationResult.Failure(it) }
+                .thenApply<TranslationResult>(TranslationResult::Success)
+                .exceptionally(TranslationResult::Failure)
     }
 
     private inner class TranslationExpiry : Expiry<TranslationKey, TranslationResult> {

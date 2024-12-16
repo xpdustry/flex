@@ -35,16 +35,12 @@ public interface Translator {
         target: Locale,
     ): CompletableFuture<String>
 
-    public fun isSupportedLanguage(locale: Locale): Boolean
-
     public object None : Translator {
         override fun translate(
             text: String,
             source: Locale,
             target: Locale,
         ): CompletableFuture<String> = CompletableFuture.failedFuture(UnsupportedLanguageException(target))
-
-        override fun isSupportedLanguage(locale: Locale): Boolean = false
     }
 
     public companion object {

@@ -30,7 +30,6 @@ import com.deepl.api.LanguageType
 import com.deepl.api.TextTranslationOptions
 import com.deepl.api.TranslatorOptions
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.FlexScope
 import kotlinx.coroutines.Dispatchers
@@ -39,8 +38,7 @@ import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.util.Locale
 
-internal class DeepLTranslator(apiKey: String, version: String = (FlexAPI.get() as MindustryPlugin).metadata.version) :
-    Translator, PluginListener {
+internal class DeepLTranslator(apiKey: String, version: String = (FlexAPI.get() as MindustryPlugin).metadata.version) : Translator {
     private val translator =
         com.deepl.api.Translator(
             apiKey,
@@ -49,13 +47,8 @@ internal class DeepLTranslator(apiKey: String, version: String = (FlexAPI.get() 
                 .setAppInfo("Flex", version),
         )
 
-    internal lateinit var sourceLanguages: List<Locale>
-    internal lateinit var targetLanguages: List<Locale>
-
-    override fun onPluginInit() {
-        sourceLanguages = fetchLanguages(LanguageType.Source)
-        targetLanguages = fetchLanguages(LanguageType.Target)
-    }
+    internal val sourceLanguages: List<Locale> = fetchLanguages(LanguageType.Source)
+    internal val targetLanguages: List<Locale> = fetchLanguages(LanguageType.Target)
 
     override fun translate(
         text: String,
@@ -92,9 +85,6 @@ internal class DeepLTranslator(apiKey: String, version: String = (FlexAPI.get() 
             translator.translateText(text, sourceLocale?.language, targetLocale.toLanguageTag(), DEFAULT_OPTIONS).text
         }
     }
-
-    override fun isSupportedLanguage(locale: Locale) =
-        locale == Translator.AUTO_DETECT || findClosestLanguage(LanguageType.Source, locale) != null
 
     private fun findClosestLanguage(
         type: LanguageType,

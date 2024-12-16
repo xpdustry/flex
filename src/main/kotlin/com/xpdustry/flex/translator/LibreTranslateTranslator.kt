@@ -25,7 +25,6 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.distributor.api.plugin.PluginListener
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.translator.Translator.Companion.AUTO_DETECT
 import kotlinx.coroutines.Dispatchers
@@ -45,13 +44,9 @@ import java.util.Locale
 internal class LibreTranslateTranslator(
     private val endpoint: URI,
     private val apiKey: String,
-) : Translator, PluginListener {
+) : Translator {
     private val http = HttpClient.newHttpClient()
-    internal lateinit var languages: Map<String, Set<String>>
-
-    override fun onPluginInit() {
-        languages = fetchSupportedLanguages()
-    }
+    internal val languages: Map<String, Set<String>> = fetchSupportedLanguages()
 
     override fun translate(
         text: String,
@@ -101,8 +96,6 @@ internal class LibreTranslateTranslator(
             json["translatedText"]!!.jsonPrimitive.content
         }
     }
-
-    override fun isSupportedLanguage(locale: Locale) = locale.language in languages
 
     private fun fetchSupportedLanguages(): Map<String, Set<String>> {
         val response =

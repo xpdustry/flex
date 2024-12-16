@@ -52,15 +52,9 @@ import com.xpdustry.flex.placeholder.template.TemplateManager
 import com.xpdustry.flex.placeholder.template.TemplateManagerImpl
 import com.xpdustry.flex.placeholder.template.TemplateProcessor
 import com.xpdustry.flex.placeholder.template.TemplateStep
-import com.xpdustry.flex.translator.CachingTranslator
-import com.xpdustry.flex.translator.DeepLTranslator
-import com.xpdustry.flex.translator.GoogleBasicTranslator
-import com.xpdustry.flex.translator.LibreTranslateTranslator
-import com.xpdustry.flex.translator.RollingTranslator
 import com.xpdustry.flex.translator.Translator
-import com.xpdustry.flex.translator.TranslatorConfig
+import com.xpdustry.flex.translator.TranslatorProxy
 import kotlin.io.path.notExists
-import kotlin.io.path.writeText
 
 internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override lateinit var placeholders: PlaceholderPipeline
@@ -72,7 +66,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override fun onInit() {
         val config = loadConfig()
 
-        translator = createTranslator(config.translator.backend)
+        translator = TranslatorProxy(this, config.translator.backend).also(::addListener)
 
         templates = TemplateManagerImpl(config.templates).also(::addListener)
         templates.setDefaultTemplate(
@@ -143,45 +137,10 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
             }
 
         if (file.notExists()) {
-            logger.warn("Configuration file does not exist, creating default configuration")
-            file.writeText(
-                """
-                hooks:
-                  chat: false
-                  join: false
-                  quit: false
-                  name:
-                    enabled: false    
-                """.trimIndent(),
-            )
+            logger.warn("Configuration file does not exist, using defaults")
+            return FlexConfig()
         }
 
         return loader.loadConfigOrThrow()
-    }
-
-    private fun createTranslator(config: TranslatorConfig.Backend): Translator {
-        val translator =
-            when (config) {
-                is TranslatorConfig.Backend.None -> Translator.None
-                is TranslatorConfig.Backend.LibreTranslate -> LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey.value)
-                is TranslatorConfig.Backend.DeepL -> DeepLTranslator(config.deeplApiKey.value, metadata.version)
-                is TranslatorConfig.Backend.GoogleBasic -> GoogleBasicTranslator(config.googleBasicApiKey.value)
-                is TranslatorConfig.Backend.Rolling ->
-                    RollingTranslator(
-                        config.translators.map(::createTranslator),
-                        createTranslator(config.fallback),
-                    )
-                is TranslatorConfig.Backend.Caching ->
-                    CachingTranslator(
-                        createTranslator(config.cachingTranslator),
-                        config.maximumSize,
-                        config.successRetention,
-                        config.failureRetention,
-                    )
-            }
-        if (translator is PluginListener) {
-            addListener(translator)
-        }
-        return translator
     }
 }
