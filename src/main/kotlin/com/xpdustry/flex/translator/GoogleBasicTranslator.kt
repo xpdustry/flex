@@ -78,9 +78,7 @@ internal class GoogleBasicTranslator(
             val response =
                 withContext(Dispatchers.IO) {
                     http.send(
-                        HttpRequest.newBuilder(
-                            createApiUri(TRANSLATION_V2_ENDPOINT, parameters),
-                        )
+                        HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT, parameters))
                             .GET()
                             .build(),
                         HttpResponse.BodyHandlers.ofString(),
@@ -88,7 +86,7 @@ internal class GoogleBasicTranslator(
                 }
 
             if (response.statusCode() != 200) {
-                throw IllegalStateException("Failed to translate text: ${response.statusCode()}")
+                error("Failed to translate text: ${response.statusCode()}")
             }
 
             Json.parseToJsonElement(response.body())
@@ -112,7 +110,7 @@ internal class GoogleBasicTranslator(
                 HttpResponse.BodyHandlers.ofString(),
             )
         if (response.statusCode() != 200) {
-            throw IllegalStateException("Failed to fetch supported languages: ${response.statusCode()}")
+            error("Failed to fetch supported languages: ${response.statusCode()}")
         }
         return Json.parseToJsonElement(response.body())
             .jsonObject["data"]!!

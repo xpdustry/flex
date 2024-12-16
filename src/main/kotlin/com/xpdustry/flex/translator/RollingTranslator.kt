@@ -25,35 +25,39 @@
  */
 package com.xpdustry.flex.translator
 
-import com.sksamuel.hoplite.Secret
-import java.net.URI
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
+import com.xpdustry.flex.FlexScope
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.future.future
+import org.slf4j.LoggerFactory
+import java.util.Locale
+import java.util.concurrent.atomic.AtomicInteger
 
-internal data class TranslatorConfig(
-    val backend: Backend = Backend.None,
-    val registerMessageProcessor: Boolean = true,
-) {
-    sealed interface Backend {
-        data object None : Backend
+internal class RollingTranslator(
+    private val translators: List<Translator>,
+    private val fallback: Translator,
+) : Translator {
+    private val cursor = AtomicInteger(0)
 
-        data class LibreTranslate(val ltEndpoint: URI, val ltApiKey: Secret) : Backend
+    override fun translate(
+        text: String,
+        source: Locale,
+        target: Locale,
+    ) = FlexScope.future {
+        val cursor = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 }
+        repeat(translators.size) {
+            val translator = translators[(cursor + it) % translators.size]
+            try {
+                return@future translator.translate(text, source, target).await()
+            } catch (e: Exception) {
+                logger.debug("Translator {} failed", translator, e)
+            }
+        }
+        return@future fallback.translate(text, source, target).await()
+    }
 
-        data class DeepL(val deeplApiKey: Secret) : Backend
+    override fun isSupportedLanguage(locale: Locale) = translators.any { it.isSupportedLanguage(locale) }
 
-        data class GoogleBasic(val googleBasicApiKey: Secret) : Backend
-
-        data class Rolling(
-            val translators: List<Backend>,
-            val fallback: Backend = None,
-        ) : Backend
-
-        data class Caching(
-            val successRetention: Duration = 10.minutes,
-            val failureRetention: Duration = 10.seconds,
-            val maximumSize: Int = 1000,
-            val cachingTranslator: Backend,
-        ) : Backend
+    companion object {
+        private val logger = LoggerFactory.getLogger(RollingTranslator::class.java)
     }
 }

@@ -56,6 +56,7 @@ import com.xpdustry.flex.translator.CachingTranslator
 import com.xpdustry.flex.translator.DeepLTranslator
 import com.xpdustry.flex.translator.GoogleBasicTranslator
 import com.xpdustry.flex.translator.LibreTranslateTranslator
+import com.xpdustry.flex.translator.RollingTranslator
 import com.xpdustry.flex.translator.Translator
 import com.xpdustry.flex.translator.TranslatorConfig
 import kotlin.io.path.notExists
@@ -165,6 +166,11 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
                 is TranslatorConfig.Backend.LibreTranslate -> LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey.value)
                 is TranslatorConfig.Backend.DeepL -> DeepLTranslator(config.deeplApiKey.value, metadata.version)
                 is TranslatorConfig.Backend.GoogleBasic -> GoogleBasicTranslator(config.googleBasicApiKey.value)
+                is TranslatorConfig.Backend.Rolling ->
+                    RollingTranslator(
+                        config.translators.map(::createTranslator),
+                        createTranslator(config.fallback),
+                    )
                 is TranslatorConfig.Backend.Caching ->
                     CachingTranslator(
                         createTranslator(config.cachingTranslator),
