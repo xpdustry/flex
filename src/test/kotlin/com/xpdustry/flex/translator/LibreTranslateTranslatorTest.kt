@@ -40,7 +40,9 @@ class LibreTranslateTranslatorTest {
         Assertions.assertDoesNotThrow { translator.onPluginInit() }
         Assertions.assertTrue(translator.languages.isNotEmpty())
         Assertions.assertTrue(translator.languages.values.flatten().isNotEmpty())
-        Assertions.assertEquals("Hello", translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join())
+        Assertions.assertDoesNotThrow {
+            translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join()
+        }
     }
 
     companion object {

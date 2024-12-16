@@ -45,14 +45,19 @@ repositories {
 
 dependencies {
     compileOnly(libs.kotlinx.coroutines.core)
+    testImplementation(libs.kotlinx.coroutines.core)
     compileOnly(libs.kotlinx.coroutines.jdk8)
+    testImplementation(libs.kotlinx.coroutines.jdk8)
     compileOnly(libs.kotlinx.serialization.json)
+    testImplementation(libs.kotlinx.serialization.json)
+
     compileOnly(toxopid.dependencies.mindustryCore)
     testImplementation(toxopid.dependencies.mindustryCore)
     compileOnly(toxopid.dependencies.arcCore)
     testImplementation(toxopid.dependencies.arcCore)
     compileOnly(libs.distributor.api)
     testImplementation(libs.distributor.api)
+
     implementation(libs.hoplite.core)
     implementation(libs.hoplite.yaml)
     implementation(libs.deepl) {
@@ -62,6 +67,7 @@ dependencies {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")
     }
+
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
     testRuntimeOnly(libs.slf4j.simple)

@@ -12,6 +12,10 @@ concurrency:
   group: "${{ github.workflow }}-${{ github.event.number || github.ref }}"
   cancel-in-progress: true
 
+permissions:
+  checks: write
+  pull-requests: write
+
 jobs:
   build:
     # Only run on PRs if the source branch is on someone else's repo
@@ -39,6 +43,13 @@ jobs:
           FLEX_TEST_TRANSLATOR_GOOGLE_BASIC_API_KEY: "${{ secrets.XPDUSTRY_GOOGLE_BASIC_API_KEY }}"
           FLEX_TEST_TRANSLATOR_LT_ENDPOINT: "${{ secrets.XPDUSTRY_LT_ENDPOINT }}"
           FLEX_TEST_TRANSLATOR_LT_API_KEY: "${{ secrets.XPDUSTRY_LT_API_KEY }}"
+
+      - name: Upload Test Summary
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: "test results"
+          junit_files: "**/build/test-results/test/TEST-*.xml"
 
       - name: Upload Artifact to Actions
         uses: actions/upload-artifact@v4
