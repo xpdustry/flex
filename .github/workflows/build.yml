@@ -34,6 +34,11 @@ jobs:
 
       - name: Build Artifact
         run: ./gradlew release
+        env:
+          FLEX_TEST_TRANSLATOR_DEEPL_API_KEY: "${{ secrets.XPDUSTRY_DEEPL_API_KEY }}"
+          FLEX_TEST_TRANSLATOR_GOOGLE_BASIC_API_KEY: "${{ secrets.XPDUSTRY_GOOGLE_BASIC_API_KEY }}"
+          FLEX_TEST_TRANSLATOR_LT_ENDPOINT: "${{ secrets.XPDUSTRY_LT_ENDPOINT }}"
+          FLEX_TEST_TRANSLATOR_LT_API_KEY: "${{ secrets.XPDUSTRY_LT_API_KEY }}"
 
       - name: Upload Artifact to Actions
         uses: actions/upload-artifact@v4
