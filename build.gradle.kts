@@ -15,7 +15,7 @@ plugins {
     alias(libs.plugins.shadow)
     alias(libs.plugins.toxopid)
     alias(libs.plugins.ksr)
-    alias(libs.plugins.dokka)
+    alias(libs.plugins.dokka.javadoc)
 }
 
 val metadata = ModMetadata.fromJson(rootProject.file("plugin.json"))
@@ -159,7 +159,7 @@ tasks.shadowJar {
 }
 
 tasks.javadocJar {
-    from(tasks.dokkaHtml)
+    from(tasks.dokkaGenerate)
 }
 
 tasks.register<Copy>("release") {
