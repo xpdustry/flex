@@ -15,7 +15,7 @@ plugins {
     alias(libs.plugins.shadow)
     alias(libs.plugins.toxopid)
     alias(libs.plugins.ksr)
-    alias(libs.plugins.dokka.javadoc)
+    alias(libs.plugins.dokka)
 }
 
 val metadata = ModMetadata.fromJson(rootProject.file("plugin.json"))

@@ -51,4 +51,4 @@ toxopid = { id = "com.xpdustry.toxopid", version.ref = "toxopid" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-core" }
 ksr = { id = "com.xpdustry.kotlin-shadow-relocator", version.ref = "ksr" }
-dokka-javadoc = { id = "org.jetbrains.dokka-javadoc", version.ref = "dokka" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
