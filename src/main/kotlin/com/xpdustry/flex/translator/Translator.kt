@@ -25,10 +25,8 @@
  */
 package com.xpdustry.flex.translator
 
-import java.net.URI
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
-import kotlin.time.Duration
 
 public interface Translator {
     public fun translate(
@@ -52,25 +50,5 @@ public interface Translator {
     public companion object {
         @JvmStatic
         public val AUTO_DETECT: Locale = Locale("auto")
-
-        @JvmStatic
-        public fun deepL(apiKey: String): Translator = DeepLTranslator(apiKey)
-
-        @JvmStatic
-        public fun googleBasic(apiKey: String): Translator = GoogleBasicTranslator(apiKey)
-
-        @JvmStatic
-        public fun libreTranslate(
-            endpoint: URI,
-            apiKey: String,
-        ): Translator = LibreTranslateTranslator(endpoint, apiKey)
-
-        @JvmStatic
-        public fun caching(
-            translator: Translator,
-            maximumSize: Int,
-            successRetention: Duration,
-            failureRetention: Duration,
-        ): Translator = CachingTranslator(translator, maximumSize, successRetention, failureRetention)
     }
 }
