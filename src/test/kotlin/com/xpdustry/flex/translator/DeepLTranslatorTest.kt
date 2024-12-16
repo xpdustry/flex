@@ -34,7 +34,7 @@ class DeepLTranslatorTest {
     @EnabledIfEnvironmentVariable(named = API_KEY_ENV, matches = ".+")
     @Test
     fun test() {
-        val translator = DeepLTranslator(System.getenv(API_KEY_ENV))
+        val translator = DeepLTranslator(System.getenv(API_KEY_ENV), "v0")
         Assertions.assertDoesNotThrow { translator.onPluginInit() }
         Assertions.assertTrue(translator.sourceLanguages.isNotEmpty())
         Assertions.assertTrue(translator.targetLanguages.isNotEmpty())
