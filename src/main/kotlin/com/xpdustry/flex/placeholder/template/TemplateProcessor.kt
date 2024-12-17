@@ -1,5 +1,5 @@
 /*
- * This file is part of FlexPlugin. A chat management plugin for Mindustry.
+ * This file is part of Flex. An advanced text processing library for Mindustry plugins.
  *
  * MIT License
  *

@@ -2,7 +2,7 @@
   "name": "flex",
   "displayName": "FlexPlugin",
   "author": "xpdustry",
-  "description": "Flex on your friends with awesome chat tags.",
+  "description": "An advanced text processing library for Mindustry plugins.",
   "version": "1.0.0",
   "minGameVersion": "146",
   "hidden": true,
