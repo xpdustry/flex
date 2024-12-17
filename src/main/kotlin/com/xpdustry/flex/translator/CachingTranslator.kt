@@ -59,7 +59,7 @@ internal class CachingTranslator(
         source: Locale,
         target: Locale,
     ): CompletableFuture<String> =
-        cache.get(TranslationKey(text, source, target))
+        cache.get(TranslationKey(text, Locale.forLanguageTag(source.language), Locale.forLanguageTag(target.language)))
             .thenCompose {
                 when (it) {
                     is TranslationResult.Success -> CompletableFuture.completedFuture(it.translation)

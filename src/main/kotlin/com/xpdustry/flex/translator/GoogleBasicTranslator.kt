@@ -56,22 +56,32 @@ internal class GoogleBasicTranslator(
                 return@future "router"
             } else if (text.isBlank() || source.language == target.language) {
                 return@future text
-            } else if (source != Translator.AUTO_DETECT && source !in supported) {
-                throw UnsupportedLanguageException(target)
+            }
+
+            var fixedSource = source
+            var fixedTarget = target
+            if (source != Translator.AUTO_DETECT && source !in supported) {
+                fixedSource = Locale.forLanguageTag(source.language)
+                if (fixedSource !in supported) {
+                    throw UnsupportedLanguageException(source)
+                }
             } else if (target !in supported) {
-                throw UnsupportedLanguageException(target)
+                fixedTarget = Locale.forLanguageTag(target.language)
+                if (fixedTarget !in supported) {
+                    throw UnsupportedLanguageException(target)
+                }
             }
 
             val parameters =
                 mutableMapOf(
                     "key" to apiKey,
                     "q" to text,
-                    "target" to target.toLanguageTag(),
+                    "target" to fixedTarget.toLanguageTag(),
                     "format" to "text",
                 )
 
-            if (source != Translator.AUTO_DETECT) {
-                parameters["source"] = source.toLanguageTag()
+            if (fixedSource != Translator.AUTO_DETECT) {
+                parameters["source"] = fixedSource.toLanguageTag()
             }
 
             val response =

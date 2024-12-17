@@ -44,12 +44,12 @@ internal class RollingTranslator(
         target: Locale,
     ) = FlexScope.future {
         val cursor = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 }
-        repeat(translators.size) {
-            val translator = translators[(cursor + it) % translators.size]
+        for (i in translators.indices) {
+            val translator = translators[(cursor + i) % translators.size]
             try {
                 return@future translator.translate(text, source, target).await()
             } catch (e: Exception) {
-                logger.debug("Translator {} failed", translator, e)
+                logger.debug("Translator {} failed", translator.javaClass.simpleName, e)
             }
         }
         return@future fallback.translate(text, source, target).await()
