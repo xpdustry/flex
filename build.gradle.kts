@@ -159,7 +159,7 @@ tasks.shadowJar {
 }
 
 tasks.javadocJar {
-    from(tasks.dokkaGenerate)
+    from(tasks.dokkaHtml)
 }
 
 tasks.register<Copy>("release") {
