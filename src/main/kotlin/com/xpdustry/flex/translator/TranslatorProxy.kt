@@ -51,7 +51,7 @@ internal class TranslatorProxy(
     private fun createTranslator(config: TranslatorConfig.Backend): Translator =
         when (config) {
             is TranslatorConfig.Backend.None -> Translator.None
-            is TranslatorConfig.Backend.LibreTranslate -> LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey.value)
+            is TranslatorConfig.Backend.LibreTranslate -> LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey?.value)
             is TranslatorConfig.Backend.DeepL -> DeepLTranslator(config.deeplApiKey.value, plugin.metadata.version)
             is TranslatorConfig.Backend.GoogleBasic -> GoogleBasicTranslator(config.googleBasicApiKey.value)
             is TranslatorConfig.Backend.Rolling ->

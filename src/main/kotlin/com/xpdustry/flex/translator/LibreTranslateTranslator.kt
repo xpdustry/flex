@@ -43,7 +43,7 @@ import java.util.Locale
 
 internal class LibreTranslateTranslator(
     private val endpoint: URI,
-    private val apiKey: String,
+    private val apiKey: String?,
 ) : Translator {
     private val http = HttpClient.newHttpClient()
     internal val languages: Map<String, Set<String>> = fetchSupportedLanguages()
@@ -66,22 +66,21 @@ internal class LibreTranslateTranslator(
             throw UnsupportedLanguageException(target)
         }
 
+        val params =
+            mutableMapOf(
+                "q" to text,
+                "source" to source.language,
+                "target" to target.language,
+                "format" to "text",
+            )
+        if (apiKey != null) {
+            params["api_key"] = apiKey
+        }
+
         val response =
             withContext(Dispatchers.IO) {
                 http.send(
-                    HttpRequest.newBuilder(
-                        createApiUri(
-                            endpoint,
-                            "translate",
-                            mapOf(
-                                "q" to text,
-                                "source" to source.language,
-                                "target" to target.language,
-                                "api_key" to apiKey,
-                                "format" to "text",
-                            ),
-                        ),
-                    )
+                    HttpRequest.newBuilder(createApiUri(endpoint, "translate", params))
                         .header("Accept", "application/json")
                         .POST(BodyPublishers.noBody())
                         .build(),

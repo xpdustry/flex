@@ -38,7 +38,7 @@ internal data class TranslatorConfig(
     sealed interface Backend {
         data object None : Backend
 
-        data class LibreTranslate(val ltEndpoint: URI, val ltApiKey: Secret) : Backend
+        data class LibreTranslate(val ltEndpoint: URI, val ltApiKey: Secret? = null) : Backend
 
         data class DeepL(val deeplApiKey: Secret) : Backend
 
