@@ -32,6 +32,7 @@ import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.flex.FlexConfig
 import com.xpdustry.flex.FlexKeys
 import com.xpdustry.flex.FlexListener
@@ -60,6 +61,19 @@ internal class MessagePipelineImpl(
 
     override fun onPluginInit() {
         Vars.netServer.addPacketHandler("fooCheck") { player, _ -> foo += MUUID.from(player) }
+
+        register("foo_sign_strip", Priority.HIGH) { context ->
+            var msg = context.message
+            // https://github.com/mindustry-antigrief/mindustry-client/blob/23025185c20d102f3fbb9d9a4c20196cc871d94b/core/src/mindustry/client/communication/InvisibleCharCoder.kt#L14
+            if (
+                config.fooClientCompatibility &&
+                    context.sender.isFooClient() &&
+                    msg.takeLast(2).all { (0xF80 until 0x107F).contains(it.code) }
+            ) {
+                msg = msg.dropLast(2)
+            }
+            CompletableFuture.completedFuture(msg)
+        }
     }
 
     override fun onFlexConfigReload(config: FlexConfig) {
@@ -119,11 +133,7 @@ internal class MessagePipelineImpl(
                         target.sendMessage(
                             Distributor.get().mindustryComponentDecoder.decode(formatted),
                             Distributor.get().mindustryComponentDecoder.decode(processed),
-                            if (config.fooClientCompatibility && sender.isFooClient()) {
-                                Audience.empty()
-                            } else {
-                                sender
-                            },
+                            if (config.fooClientCompatibility && target.isFooClient()) Audience.empty() else sender,
                         )
                     }
                 }

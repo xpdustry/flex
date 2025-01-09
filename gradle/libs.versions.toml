@@ -4,6 +4,7 @@ kotlin-core = "2.1.0"
 kotlin-coroutines = "1.10.1"
 kotlin-runtime = "4.0.0"
 kotlinx-serialization = "1.8.0"
+mindustry-foo = "1782"
 
 # plugins
 shadow = "8.3.5"

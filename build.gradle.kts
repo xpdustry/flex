@@ -1,8 +1,11 @@
 import com.xpdustry.ksr.kotlinRelocate
+import com.xpdustry.toxopid.Toxopid
 import com.xpdustry.toxopid.extension.anukeXpdustry
+import com.xpdustry.toxopid.extension.configureDesktop
 import com.xpdustry.toxopid.spec.ModMetadata
 import com.xpdustry.toxopid.spec.ModPlatform
 import com.xpdustry.toxopid.task.GithubAssetDownload
+import com.xpdustry.toxopid.task.MindustryExec
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -116,7 +119,7 @@ spotless {
         licenseHeaderFile(rootProject.file("HEADER.txt"))
     }
     kotlinGradle {
-        ktlint()
+        ktlint().editorConfigOverride(mapOf("max_line_length" to "120"))
     }
 }
 
@@ -192,4 +195,17 @@ val downloadKotlinRuntime by tasks.registering(GithubAssetDownload::class) {
 
 tasks.runMindustryServer {
     mods.from(downloadSlf4md, downloadDistributorCommon, downloadKotlinRuntime)
+}
+
+val downloadFooClient by tasks.registering(GithubAssetDownload::class) {
+    owner = "mindustry-antigrief"
+    repo = "mindustry-client-v7-builds"
+    asset = "desktop.jar"
+    version = libs.versions.mindustry.foo.get()
+}
+
+tasks.register<MindustryExec>("runMindustryDesktopFoo") {
+    group = Toxopid.TASK_GROUP_NAME
+    configureDesktop()
+    setClasspath(files(downloadFooClient))
 }
