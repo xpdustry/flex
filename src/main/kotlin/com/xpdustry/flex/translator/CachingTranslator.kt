@@ -54,12 +54,9 @@ internal class CachingTranslator(
             .ticker(ticker)
             .buildAsync(TranslationLoader(translator))
 
-    override fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ): CompletableFuture<String> =
-        cache.get(TranslationKey(text, Locale.forLanguageTag(source.language), Locale.forLanguageTag(target.language)))
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
+        cache
+            .get(TranslationKey(text, Locale.forLanguageTag(source.language), Locale.forLanguageTag(target.language)))
             .thenCompose {
                 when (it) {
                     is TranslationResult.Success -> CompletableFuture.completedFuture(it.translation)
@@ -67,44 +64,42 @@ internal class CachingTranslator(
                 }
             }
 
-    private class TranslationLoader(private val translator: Translator) : AsyncCacheLoader<TranslationKey, TranslationResult> {
-        override fun asyncLoad(
-            key: TranslationKey,
-            executor: Executor,
-        ): CompletableFuture<TranslationResult> =
-            translator.translate(key.text, key.source, key.target)
+    private class TranslationLoader(private val translator: Translator) :
+        AsyncCacheLoader<TranslationKey, TranslationResult> {
+        override fun asyncLoad(key: TranslationKey, executor: Executor): CompletableFuture<TranslationResult> =
+            translator
+                .translate(key.text, key.source, key.target)
                 .thenApply<TranslationResult>(TranslationResult::Success)
                 .exceptionally(TranslationResult::Failure)
     }
 
     private inner class TranslationExpiry : Expiry<TranslationKey, TranslationResult> {
-        override fun expireAfterCreate(
-            key: TranslationKey,
-            value: TranslationResult,
-            currentTime: Long,
-        ) = when (value) {
-            is TranslationResult.Success -> successRetention.inWholeNanoseconds
-            is TranslationResult.Failure -> failureRetention.inWholeNanoseconds
-        }
+        override fun expireAfterCreate(key: TranslationKey, value: TranslationResult, currentTime: Long) =
+            when (value) {
+                is TranslationResult.Success -> successRetention.inWholeNanoseconds
+                is TranslationResult.Failure -> failureRetention.inWholeNanoseconds
+            }
 
         override fun expireAfterUpdate(
             key: TranslationKey,
             value: TranslationResult,
             currentTime: Long,
             currentDuration: Long,
-        ) = when (value) {
-            is TranslationResult.Success -> successRetention.inWholeNanoseconds
-            is TranslationResult.Failure -> failureRetention.inWholeNanoseconds
-        }
+        ) =
+            when (value) {
+                is TranslationResult.Success -> successRetention.inWholeNanoseconds
+                is TranslationResult.Failure -> failureRetention.inWholeNanoseconds
+            }
 
         override fun expireAfterRead(
             key: TranslationKey,
             value: TranslationResult,
             currentTime: Long,
             currentDuration: Long,
-        ) = when (value) {
-            is TranslationResult.Success -> successRetention.inWholeNanoseconds
-            is TranslationResult.Failure -> currentDuration
-        }
+        ) =
+            when (value) {
+                is TranslationResult.Success -> successRetention.inWholeNanoseconds
+                is TranslationResult.Failure -> currentDuration
+            }
     }
 }

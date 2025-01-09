@@ -63,7 +63,10 @@ class PlaceholderPipelineImplTest {
         pipeline.register("test") { "value" }
         Assertions.assertEquals("test", pipeline.pump(PlaceholderContext(Audience.empty(), "test")))
         Assertions.assertEquals("value", pipeline.pump(PlaceholderContext(Audience.empty(), "%test%")))
-        Assertions.assertEquals("hello value world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
+        Assertions.assertEquals(
+            "hello value world",
+            pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")),
+        )
     }
 
     @Test
@@ -81,46 +84,72 @@ class PlaceholderPipelineImplTest {
     fun `test empty placeholder`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { "" }
-        Assertions.assertEquals("hello  world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
+        Assertions.assertEquals(
+            "hello  world",
+            pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")),
+        )
     }
 
     @Test
     fun `test null placeholder`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { null }
-        Assertions.assertEquals("hello %test% world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
+        Assertions.assertEquals(
+            "hello %test% world",
+            pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")),
+        )
     }
 
     @Test
     fun `test unknown placeholder`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
-        Assertions.assertEquals("hello %test% world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
+        Assertions.assertEquals(
+            "hello %test% world",
+            pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")),
+        )
     }
 
     @Test
     fun `test throwing placeholder`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { throw RuntimeException("Expected") }
-        Assertions.assertEquals("hello %test% world", pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")))
+        Assertions.assertEquals(
+            "hello %test% world",
+            pipeline.pump(PlaceholderContext(Audience.empty(), "hello %test% world")),
+        )
     }
 
     @Test
     fun `test template`() {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { "value" }
-        val processor = TemplateProcessor(pipeline, TemplateManagerImpl(mapOf("test" to listOf(TemplateStep("hello %test% world")))))
+        val processor =
+            TemplateProcessor(
+                pipeline,
+                TemplateManagerImpl(mapOf("test" to listOf(TemplateStep("hello %test% world")))),
+            )
         pipeline.register("template", processor)
-        Assertions.assertEquals("hello value world", pipeline.pump(PlaceholderContext(Audience.empty(), "%template:test%")))
+        Assertions.assertEquals(
+            "hello value world",
+            pipeline.pump(PlaceholderContext(Audience.empty(), "%template:test%")),
+        )
     }
 
     @ParameterizedTest
     @ValueSource(strings = ["$", "\\"])
-    fun `test escape meta chars`(char: String) {
+    fun `test escape meta char`(char: String) {
         val pipeline = PlaceholderPipelineImpl(TestPlugin)
         pipeline.register("test") { char }
-        val processor = TemplateProcessor(pipeline, TemplateManagerImpl(mapOf("test" to listOf(TemplateStep("hello %test% world")))))
+        val processor =
+            TemplateProcessor(
+                pipeline,
+                TemplateManagerImpl(mapOf("test" to listOf(TemplateStep("hello %test% world")))),
+            )
         pipeline.register("template", processor)
         Assertions.assertEquals(char, pipeline.pump(PlaceholderContext(Audience.empty(), char)))
-        Assertions.assertEquals("hello $char world", pipeline.pump(PlaceholderContext(Audience.empty(), "%template:test%")))
+        Assertions.assertEquals(
+            "hello $char world",
+            pipeline.pump(PlaceholderContext(Audience.empty(), "%template:test%")),
+        )
     }
 }

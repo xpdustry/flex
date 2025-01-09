@@ -30,12 +30,8 @@ import com.xpdustry.distributor.api.key.KeyContainer
 import com.xpdustry.flex.processor.ProcessorPipeline
 
 public data class PlaceholderContext
-    @JvmOverloads
-    constructor(
-        val subject: Audience,
-        val query: String,
-        val arguments: KeyContainer = KeyContainer.empty(),
-    )
+@JvmOverloads
+constructor(val subject: Audience, val query: String, val arguments: KeyContainer = KeyContainer.empty())
 
 public interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String?> {
     override fun pump(context: PlaceholderContext): String

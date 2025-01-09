@@ -32,11 +32,8 @@ import com.xpdustry.flex.placeholder.PlaceholderContext
 public data class Template(public val steps: List<TemplateStep>)
 
 public data class TemplateStep
-    @JvmOverloads
-    constructor(
-        public val text: String,
-        @ConfigAlias("if") public val filter: TemplateFilter = TemplateFilter.none(),
-    )
+@JvmOverloads
+constructor(public val text: String, @ConfigAlias("if") public val filter: TemplateFilter = TemplateFilter.none())
 
 public fun interface TemplateFilter {
     public fun accepts(context: PlaceholderContext): Boolean
@@ -62,9 +59,9 @@ public fun interface TemplateFilter {
 
 private data class Placeholder(val placeholder: String) : TemplateFilter {
     override fun accepts(context: PlaceholderContext): Boolean =
-        FlexAPI.get().placeholders
-            .pump(context.copy(query = "%$placeholder%"))
-            .let { it.isNotEmpty() && it != "%$placeholder%" }
+        FlexAPI.get().placeholders.pump(context.copy(query = "%$placeholder%")).let {
+            it.isNotEmpty() && it != "%$placeholder%"
+        }
 }
 
 private data class Any(val filters: List<TemplateFilter>) : TemplateFilter {

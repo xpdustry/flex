@@ -28,11 +28,9 @@ package com.xpdustry.flex
 import com.xpdustry.distributor.api.key.Key
 
 public object FlexKeys {
-    @JvmStatic
-    public val FLEX_NAMESPACE: String = "flex"
+    @JvmStatic public val FLEX_NAMESPACE: String = "flex"
 
-    @JvmStatic
-    public val MESSAGE: Key<String> = Key.of(FLEX_NAMESPACE, "message", String::class.java)
+    @JvmStatic public val MESSAGE: Key<String> = Key.of(FLEX_NAMESPACE, "message", String::class.java)
 
     @JvmStatic
     public val TRANSLATED_MESSAGE: Key<String> = Key.of(FLEX_NAMESPACE, "translated_message", String::class.java)

@@ -26,10 +26,10 @@
 package com.xpdustry.flex.translator
 
 import com.xpdustry.flex.util.assertDoesNotThrowsAndReturns
+import java.util.Locale
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
-import java.util.Locale
 
 class GoogleBasicTranslatorTest {
     @EnabledIfEnvironmentVariable(named = API_KEY_ENV, matches = ".+")
@@ -37,9 +37,7 @@ class GoogleBasicTranslatorTest {
     fun test() {
         val translator = assertDoesNotThrowsAndReturns { GoogleBasicTranslator(System.getenv(API_KEY_ENV)) }
         Assertions.assertTrue(translator.supported.isNotEmpty())
-        Assertions.assertDoesNotThrow {
-            translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join()
-        }
+        Assertions.assertDoesNotThrow { translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join() }
     }
 
     companion object {

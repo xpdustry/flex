@@ -61,17 +61,22 @@ internal class ConnectionNotificationHook(
         }
     }
 
-    private fun sendConnect(
-        player: Player,
-        template: String,
-    ) = Distributor.get().audienceProvider.players.sendMessage(
+    private fun sendConnect(player: Player, template: String) =
         Distributor.get()
-            .mindustryComponentDecoder.decode(
-                placeholders.pump(
-                    PlaceholderContext(Distributor.get().audienceProvider.getPlayer(player), "%template:$template%"),
-                ),
-            ),
-    )
+            .audienceProvider
+            .players
+            .sendMessage(
+                Distributor.get()
+                    .mindustryComponentDecoder
+                    .decode(
+                        placeholders.pump(
+                            PlaceholderContext(
+                                Distributor.get().audienceProvider.getPlayer(player),
+                                "%template:$template%",
+                            )
+                        )
+                    )
+            )
 
     companion object {
         private val logger = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)

@@ -25,9 +25,9 @@
  */
 package com.xpdustry.flex.translator
 
+import java.util.Locale
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import java.util.Locale
 
 class RollingTranslatorTest {
     @Test
@@ -35,7 +35,8 @@ class RollingTranslatorTest {
         val translator1 = TestTranslator()
         translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Success("Salut")
         val translator2 = TestTranslator()
-        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Success("Bonjour")
+        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
+            TranslationResult.Success("Bonjour")
         val rolling = RollingTranslator(listOf(translator1, translator2), Translator.None)
 
         Assertions.assertEquals("Salut", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
@@ -52,9 +53,11 @@ class RollingTranslatorTest {
     @Test
     fun `test failure`() {
         val translator1 = TestTranslator()
-        translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Failure(RateLimitedException())
+        translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
+            TranslationResult.Failure(RateLimitedException())
         val translator2 = TestTranslator()
-        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Success("Bonjour")
+        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
+            TranslationResult.Success("Bonjour")
         val rolling = RollingTranslator(listOf(translator1, translator2), Translator.None)
 
         Assertions.assertEquals("Bonjour", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
@@ -70,9 +73,11 @@ class RollingTranslatorTest {
     @Test
     fun `test fallback`() {
         val translator1 = TestTranslator()
-        translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Failure(RateLimitedException())
+        translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
+            TranslationResult.Failure(RateLimitedException())
         val translator2 = TestTranslator()
-        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Failure(RateLimitedException())
+        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
+            TranslationResult.Failure(RateLimitedException())
         val fallback = TestTranslator()
         fallback.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Success("Bonjour")
         val rolling = RollingTranslator(listOf(translator1, translator2), fallback)

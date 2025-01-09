@@ -38,20 +38,18 @@ import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.processor.AbstractPriorityProcessorPipeline
+import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import mindustry.Vars
 import mindustry.game.EventType
-import java.util.concurrent.CompletableFuture
 
-internal class MessagePipelineImpl(
-    plugin: MindustryPlugin,
-    private val placeholders: PlaceholderPipeline,
-) : MessagePipeline,
-    PluginListener,
-    AbstractPriorityProcessorPipeline<MessageContext, CompletableFuture<String>>(plugin, "message") {
+internal class MessagePipelineImpl(plugin: MindustryPlugin, private val placeholders: PlaceholderPipeline) :
+    AbstractPriorityProcessorPipeline<MessageContext, CompletableFuture<String>>(plugin, "message"),
+    MessagePipeline,
+    PluginListener {
     private val foo = mutableSetOf<MUUID>()
 
     override fun onPluginInit() {
@@ -86,33 +84,35 @@ internal class MessagePipelineImpl(
         template: String,
     ): CompletableFuture<Void?> =
         FlexScope.future {
-            target.audiences.map { target ->
-                FlexScope.async {
-                    val processed = pump(MessageContext(sender, target, message)).await()
-                    if (processed.isBlank()) {
-                        return@async
-                    }
+            target.audiences
+                .map { target ->
+                    FlexScope.async {
+                        val processed = pump(MessageContext(sender, target, message)).await()
+                        if (processed.isBlank()) {
+                            return@async
+                        }
 
-                    val formatted =
-                        placeholders.pump(
-                            PlaceholderContext(
-                                sender,
-                                "%template:$template%",
-                                MutableKeyContainer.create().apply { set(FlexKeys.MESSAGE, processed) },
-                            ),
+                        val formatted =
+                            placeholders.pump(
+                                PlaceholderContext(
+                                    sender,
+                                    "%template:$template%",
+                                    MutableKeyContainer.create().apply { set(FlexKeys.MESSAGE, processed) },
+                                )
+                            )
+
+                        if (formatted.isBlank()) {
+                            return@async
+                        }
+
+                        target.sendMessage(
+                            Distributor.get().mindustryComponentDecoder.decode(formatted),
+                            Distributor.get().mindustryComponentDecoder.decode(processed),
+                            sender.takeUnless(::isFooClient) ?: Audience.empty(),
                         )
-
-                    if (formatted.isBlank()) {
-                        return@async
                     }
-
-                    target.sendMessage(
-                        Distributor.get().mindustryComponentDecoder.decode(formatted),
-                        Distributor.get().mindustryComponentDecoder.decode(processed),
-                        sender.takeUnless(::isFooClient) ?: Audience.empty(),
-                    )
                 }
-            }.awaitAll()
+                .awaitAll()
             null
         }
 
@@ -121,5 +121,6 @@ internal class MessagePipelineImpl(
         foo -= MUUID.from(event.player)
     }
 
-    private fun isFooClient(audience: Audience) = audience.metadata[StandardKeys.MUUID]?.let { foo.contains(it) } ?: false
+    private fun isFooClient(audience: Audience) =
+        audience.metadata[StandardKeys.MUUID]?.let { foo.contains(it) } ?: false
 }

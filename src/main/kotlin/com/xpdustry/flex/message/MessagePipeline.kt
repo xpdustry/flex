@@ -31,27 +31,23 @@ import com.xpdustry.flex.processor.PriorityProcessorPipeline
 import java.util.concurrent.CompletableFuture
 
 public data class MessageContext
-    @JvmOverloads
-    constructor(
-        val sender: Audience,
-        val target: Audience,
-        val message: String,
-        @get:JvmName("isFiltering")
-        val filter: Boolean = false,
-        val kind: Kind = Kind.CHAT,
-    ) {
-        public enum class Kind {
-            CHAT,
-            COMMAND,
-        }
+@JvmOverloads
+constructor(
+    val sender: Audience,
+    val target: Audience,
+    val message: String,
+    @get:JvmName("isFiltering") val filter: Boolean = false,
+    val kind: Kind = Kind.CHAT,
+) {
+    public enum class Kind {
+        CHAT,
+        COMMAND,
     }
+}
 
 public interface MessagePipeline : PriorityProcessorPipeline<MessageContext, CompletableFuture<String>> {
-    public fun broadcast(
-        sender: Audience,
-        target: Audience,
-        message: String,
-    ): CompletableFuture<Void?> = broadcast(sender, target, message, TemplateManager.CHAT_TEMPLATE_NAME)
+    public fun broadcast(sender: Audience, target: Audience, message: String): CompletableFuture<Void?> =
+        broadcast(sender, target, message, TemplateManager.CHAT_TEMPLATE_NAME)
 
     public fun broadcast(
         sender: Audience,

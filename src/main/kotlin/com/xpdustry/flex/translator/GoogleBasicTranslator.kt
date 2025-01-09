@@ -26,6 +26,12 @@
 package com.xpdustry.flex.translator
 
 import com.xpdustry.flex.FlexScope
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.util.Locale
+import java.util.concurrent.CompletableFuture
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withContext
@@ -33,24 +39,12 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.util.Locale
-import java.util.concurrent.CompletableFuture
 
-internal class GoogleBasicTranslator(
-    private val apiKey: String,
-) : Translator {
+internal class GoogleBasicTranslator(private val apiKey: String) : Translator {
     private val http = HttpClient.newHttpClient()
     internal val supported: Set<Locale> = fetchSupportedLanguages()
 
-    override fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ): CompletableFuture<String> =
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
         FlexScope.future {
             if (source.language == "router" || target.language == "router") {
                 return@future "router"
@@ -73,12 +67,7 @@ internal class GoogleBasicTranslator(
             }
 
             val parameters =
-                mutableMapOf(
-                    "key" to apiKey,
-                    "q" to text,
-                    "target" to fixedTarget.toLanguageTag(),
-                    "format" to "text",
-                )
+                mutableMapOf("key" to apiKey, "q" to text, "target" to fixedTarget.toLanguageTag(), "format" to "text")
 
             if (fixedSource != Translator.AUTO_DETECT) {
                 parameters["source"] = fixedSource.toLanguageTag()
@@ -87,9 +76,7 @@ internal class GoogleBasicTranslator(
             val response =
                 withContext(Dispatchers.IO) {
                     http.send(
-                        HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT, parameters))
-                            .GET()
-                            .build(),
+                        HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT, parameters)).GET().build(),
                         HttpResponse.BodyHandlers.ofString(),
                     )
                 }

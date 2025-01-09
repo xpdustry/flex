@@ -30,16 +30,14 @@ import java.util.concurrent.CompletableFuture
 
 internal class TestTranslator : Translator {
     val results = mutableMapOf<TranslationKey, TranslationResult>()
+
     var successCount = 0
         private set
+
     var failureCount = 0
         private set
 
-    override fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ): CompletableFuture<String> =
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
         when (val result = results[TranslationKey(text, source, target)]) {
             is TranslationResult.Success -> {
                 successCount++

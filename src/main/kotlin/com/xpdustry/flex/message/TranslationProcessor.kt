@@ -37,13 +37,13 @@ import com.xpdustry.flex.processor.Processor
 import com.xpdustry.flex.translator.RateLimitedException
 import com.xpdustry.flex.translator.Translator
 import com.xpdustry.flex.translator.UnsupportedLanguageException
+import java.util.Locale
+import java.util.concurrent.CompletableFuture
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withTimeout
 import org.slf4j.LoggerFactory
-import java.util.Locale
-import java.util.concurrent.CompletableFuture
-import kotlin.time.Duration.Companion.seconds
 
 public open class TranslationProcessor(
     private val translator: Translator,
@@ -69,10 +69,7 @@ public open class TranslationProcessor(
 
             val raw = Strings.stripColors(context.message).lowercase()
             try {
-                val result =
-                    withTimeout(3.seconds) {
-                        translator.translate(raw, sourceLocale, targetLocale).await()
-                    }
+                val result = withTimeout(3.seconds) { translator.translate(raw, sourceLocale, targetLocale).await() }
                 val formatted =
                     placeholders.pump(
                         PlaceholderContext(
@@ -82,7 +79,7 @@ public open class TranslationProcessor(
                                 set(FlexKeys.MESSAGE, context.message)
                                 set(FlexKeys.TRANSLATED_MESSAGE, result)
                             },
-                        ),
+                        )
                     )
                 if (raw == result.lowercase()) {
                     context.message
@@ -97,13 +94,7 @@ public open class TranslationProcessor(
             } catch (e: UnsupportedLanguageException) {
                 context.message
             } catch (e: Exception) {
-                logger.error(
-                    "Failed to translate the message '{}' from {} to {}",
-                    raw,
-                    sourceLocale,
-                    targetLocale,
-                    e,
-                )
+                logger.error("Failed to translate the message '{}' from {} to {}", raw, sourceLocale, targetLocale, e)
                 context.message
             }
         }

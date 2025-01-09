@@ -32,64 +32,57 @@ import com.deepl.api.TranslatorOptions
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.FlexScope
+import java.time.Duration
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withContext
-import java.time.Duration
-import java.util.Locale
 
-internal class DeepLTranslator(apiKey: String, version: String = (FlexAPI.get() as MindustryPlugin).metadata.version) : Translator {
+internal class DeepLTranslator(apiKey: String, version: String = (FlexAPI.get() as MindustryPlugin).metadata.version) :
+    Translator {
     private val translator =
         com.deepl.api.Translator(
             apiKey,
-            TranslatorOptions()
-                .setTimeout(Duration.ofSeconds(3L))
-                .setAppInfo("Flex", version),
+            TranslatorOptions().setTimeout(Duration.ofSeconds(3L)).setAppInfo("Flex", version),
         )
 
     internal val sourceLanguages: List<Locale> = fetchLanguages(LanguageType.Source)
     internal val targetLanguages: List<Locale> = fetchLanguages(LanguageType.Target)
 
-    override fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ) = FlexScope.future {
-        if (text.isBlank()) {
-            return@future text
-        } else if (source.language == "router" || target.language == "router") {
-            return@future "router"
-        }
-
-        val sourceLocale =
-            if (source == Translator.AUTO_DETECT) {
-                null
-            } else {
-                findClosestLanguage(LanguageType.Source, source)
-                    ?: throw UnsupportedLanguageException(source)
+    override fun translate(text: String, source: Locale, target: Locale) =
+        FlexScope.future {
+            if (text.isBlank()) {
+                return@future text
+            } else if (source.language == "router" || target.language == "router") {
+                return@future "router"
             }
 
-        val targetLocale =
-            findClosestLanguage(LanguageType.Target, target)
-                ?: throw UnsupportedLanguageException(target)
+            val sourceLocale =
+                if (source == Translator.AUTO_DETECT) {
+                    null
+                } else {
+                    findClosestLanguage(LanguageType.Source, source) ?: throw UnsupportedLanguageException(source)
+                }
 
-        if (sourceLocale?.language == targetLocale.language) {
-            return@future text
+            val targetLocale =
+                findClosestLanguage(LanguageType.Target, target) ?: throw UnsupportedLanguageException(target)
+
+            if (sourceLocale?.language == targetLocale.language) {
+                return@future text
+            }
+
+            if (fetchRateLimited()) {
+                throw RateLimitedException()
+            }
+
+            withContext(Dispatchers.IO) {
+                translator
+                    .translateText(text, sourceLocale?.language, targetLocale.toLanguageTag(), DEFAULT_OPTIONS)
+                    .text
+            }
         }
 
-        if (fetchRateLimited()) {
-            throw RateLimitedException()
-        }
-
-        withContext(Dispatchers.IO) {
-            translator.translateText(text, sourceLocale?.language, targetLocale.toLanguageTag(), DEFAULT_OPTIONS).text
-        }
-    }
-
-    private fun findClosestLanguage(
-        type: LanguageType,
-        locale: Locale,
-    ): Locale? {
+    private fun findClosestLanguage(type: LanguageType, locale: Locale): Locale? {
         val languages =
             when (type) {
                 LanguageType.Source -> sourceLanguages
@@ -105,12 +98,10 @@ internal class DeepLTranslator(apiKey: String, version: String = (FlexAPI.get() 
         }
     }
 
-    private fun fetchLanguages(type: LanguageType) = translator.getLanguages(type).map { Locale.forLanguageTag(it.code) }
+    private fun fetchLanguages(type: LanguageType) =
+        translator.getLanguages(type).map { Locale.forLanguageTag(it.code) }
 
-    private suspend fun fetchRateLimited() =
-        withContext(Dispatchers.IO) {
-            translator.usage.character!!.limitReached()
-        }
+    private suspend fun fetchRateLimited() = withContext(Dispatchers.IO) { translator.usage.character!!.limitReached() }
 
     companion object {
         private val DEFAULT_OPTIONS = TextTranslationOptions().setFormality(Formality.PreferLess)

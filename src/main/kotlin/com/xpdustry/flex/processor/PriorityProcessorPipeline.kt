@@ -28,14 +28,8 @@ package com.xpdustry.flex.processor
 import com.xpdustry.distributor.api.util.Priority
 
 public interface PriorityProcessorPipeline<I, O> : ProcessorPipeline<I, O> {
-    public override fun register(
-        name: String,
-        processor: Processor<I, O>,
-    ): Unit = register(name, Priority.NORMAL, processor)
+    public override fun register(name: String, processor: Processor<I, O>): Unit =
+        register(name, Priority.NORMAL, processor)
 
-    public fun register(
-        name: String,
-        priority: Priority,
-        processor: Processor<I, O>,
-    )
+    public fun register(name: String, priority: Priority, processor: Processor<I, O>)
 }

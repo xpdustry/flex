@@ -28,16 +28,9 @@ package com.xpdustry.flex.translator
 import java.net.URI
 import java.net.URLEncoder
 
-internal fun createApiUri(
-    endpoint: URI,
-    parameters: Map<String, String>,
-) = createApiUri(endpoint, null, parameters)
+internal fun createApiUri(endpoint: URI, parameters: Map<String, String>) = createApiUri(endpoint, null, parameters)
 
-internal fun createApiUri(
-    endpoint: URI,
-    path: String? = null,
-    parameters: Map<String, String> = emptyMap(),
-): URI {
+internal fun createApiUri(endpoint: URI, path: String? = null, parameters: Map<String, String> = emptyMap()): URI {
     var result = endpoint.toString()
     if (path == null) {
         if (result.endsWith('/')) result = result.dropLast(1)
@@ -45,7 +38,8 @@ internal fun createApiUri(
         if (!result.endsWith('/')) result += '/'
         result += path
     }
-    val query = parameters.entries.joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, Charsets.UTF_8)}" }
+    val query =
+        parameters.entries.joinToString("&") { (key, value) -> "$key=${URLEncoder.encode(value, Charsets.UTF_8)}" }
     if (query.isNotEmpty()) result += "?$query"
     return URI.create(result)
 }

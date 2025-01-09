@@ -63,8 +63,9 @@ internal val AudienceProcessor =
         when (ctx.query.lowercase()) {
             "name" -> ctx.subject.metadata[StandardKeys.NAME]?.toString()
             "name_colored" ->
-                ctx.subject.metadata[StandardKeys.DECORATED_NAME]
-                    ?.let { ComponentStringBuilder.mindustry(ctx.subject.metadata).append(it).toString() }
+                ctx.subject.metadata[StandardKeys.DECORATED_NAME]?.let {
+                    ComponentStringBuilder.mindustry(ctx.subject.metadata).append(it).toString()
+                }
             "color" -> ctx.subject.metadata[StandardKeys.COLOR]?.toHex()
             "team_color" -> ctx.subject.metadata[StandardKeys.TEAM]?.color?.toHex()
             else -> null

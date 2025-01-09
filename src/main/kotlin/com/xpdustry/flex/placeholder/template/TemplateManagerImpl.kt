@@ -27,8 +27,8 @@ package com.xpdustry.flex.placeholder.template
 
 import com.xpdustry.flex.FlexConfig
 import com.xpdustry.flex.FlexListener
-import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
+import org.slf4j.LoggerFactory
 
 internal class TemplateManagerImpl(config: TemplateConfig) : TemplateManager, FlexListener {
     private var templates: Map<String, Template> = config.toTemplateMap()
@@ -43,10 +43,7 @@ internal class TemplateManagerImpl(config: TemplateConfig) : TemplateManager, Fl
 
     override fun hasTemplate(name: String): Boolean = templates.containsKey(name) || defaults.containsKey(name)
 
-    override fun setDefaultTemplate(
-        name: String,
-        template: Template,
-    ) {
+    override fun setDefaultTemplate(name: String, template: Template) {
         defaults[name] = template
     }
 

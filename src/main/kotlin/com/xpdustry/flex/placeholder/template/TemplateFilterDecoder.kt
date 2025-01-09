@@ -41,34 +41,40 @@ import kotlin.reflect.jvm.jvmName
 internal class TemplateFilterDecoder : NullHandlingDecoder<TemplateFilter> {
     override fun supports(type: KType) = type.classifier == TemplateFilter::class
 
-    override fun safeDecode(
-        node: Node,
-        type: KType,
-        context: DecoderContext,
-    ) = when (node) {
-        is StringNode -> TemplateFilter.placeholder(node.value).valid()
-        is MapNode ->
-            if (node.size != 1) {
-                ConfigFailure.Generic("Expected a single key in map").invalid()
-            } else {
-                val (operator, value) = node.map.entries.first()
-                val filters =
-                    when (value) {
-                        is ArrayNode ->
-                            value.elements
-                                .map { decode(it, type, context) }
-                                .sequence()
-                                .mapInvalid { ConfigFailure.CollectionElementErrors(value, it) }
+    override fun safeDecode(node: Node, type: KType, context: DecoderContext) =
+        when (node) {
+            is StringNode -> TemplateFilter.placeholder(node.value).valid()
+            is MapNode ->
+                if (node.size != 1) {
+                    ConfigFailure.Generic("Expected a single key in map").invalid()
+                } else {
+                    val (operator, value) = node.map.entries.first()
+                    val filters =
+                        when (value) {
+                            is ArrayNode ->
+                                value.elements
+                                    .map { decode(it, type, context) }
+                                    .sequence()
+                                    .mapInvalid { ConfigFailure.CollectionElementErrors(value, it) }
 
-                        else -> decode(value, type, context).map { listOf(it) }
+                            else -> decode(value, type, context).map { listOf(it) }
+                        }
+                    when (operator) {
+                        "not" ->
+                            filters.map(TemplateFilter::not).onSuccess {
+                                context.usedPaths += node.atKey(operator).path
+                            }
+                        "any" ->
+                            filters.map(TemplateFilter::any).onSuccess {
+                                context.usedPaths += node.atKey(operator).path
+                            }
+                        "and" ->
+                            filters.map(TemplateFilter::and).onSuccess {
+                                context.usedPaths += node.atKey(operator).path
+                            }
+                        else -> ConfigFailure.Generic("Unknown operator $operator").invalid()
                     }
-                when (operator) {
-                    "not" -> filters.map(TemplateFilter::not).onSuccess { context.usedPaths += node.atKey(operator).path }
-                    "any" -> filters.map(TemplateFilter::any).onSuccess { context.usedPaths += node.atKey(operator).path }
-                    "and" -> filters.map(TemplateFilter::and).onSuccess { context.usedPaths += node.atKey(operator).path }
-                    else -> ConfigFailure.Generic("Unknown operator $operator").invalid()
                 }
-            }
-        else -> ConfigFailure.Generic("Unsupported node type ${node::class.jvmName}").invalid()
-    }
+            else -> ConfigFailure.Generic("Unsupported node type ${node::class.jvmName}").invalid()
+        }
 }

@@ -29,22 +29,14 @@ import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 public interface Translator {
-    public fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ): CompletableFuture<String>
+    public fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String>
 
     public object None : Translator {
-        override fun translate(
-            text: String,
-            source: Locale,
-            target: Locale,
-        ): CompletableFuture<String> = CompletableFuture.failedFuture(UnsupportedLanguageException(target))
+        override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
+            CompletableFuture.failedFuture(UnsupportedLanguageException(target))
     }
 
     public companion object {
-        @JvmStatic
-        public val AUTO_DETECT: Locale = Locale("auto")
+        @JvmStatic public val AUTO_DETECT: Locale = Locale("auto")
     }
 }

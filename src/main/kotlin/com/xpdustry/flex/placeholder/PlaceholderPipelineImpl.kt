@@ -30,9 +30,8 @@ import com.xpdustry.flex.processor.AbstractPriorityProcessorPipeline
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
-internal class PlaceholderPipelineImpl(
-    plugin: MindustryPlugin,
-) : PlaceholderPipeline, AbstractPriorityProcessorPipeline<PlaceholderContext, String?>(plugin, "placeholder") {
+internal class PlaceholderPipelineImpl(plugin: MindustryPlugin) :
+    AbstractPriorityProcessorPipeline<PlaceholderContext, String?>(plugin, "placeholder"), PlaceholderPipeline {
     override fun pump(context: PlaceholderContext): String {
         val builder = StringBuilder()
         val matcher = PLACEHOLDER_REGEX.matcher(context.query)

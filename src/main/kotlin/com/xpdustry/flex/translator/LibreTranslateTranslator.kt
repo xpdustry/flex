@@ -27,6 +27,12 @@ package com.xpdustry.flex.translator
 
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.translator.Translator.Companion.AUTO_DETECT
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpRequest.BodyPublishers
+import java.net.http.HttpResponse.BodyHandlers
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.future
 import kotlinx.coroutines.withContext
@@ -34,67 +40,52 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpRequest.BodyPublishers
-import java.net.http.HttpResponse.BodyHandlers
-import java.util.Locale
 
-internal class LibreTranslateTranslator(
-    private val endpoint: URI,
-    private val apiKey: String?,
-) : Translator {
+internal class LibreTranslateTranslator(private val endpoint: URI, private val apiKey: String?) : Translator {
     private val http = HttpClient.newHttpClient()
     internal val languages: Map<String, Set<String>> = fetchSupportedLanguages()
 
-    override fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ) = FlexScope.future {
-        if (source.language == "router" || target.language == "router") {
-            return@future "router"
-        } else if (text.isBlank() || source.language == target.language) {
-            return@future text
-        }
-
-        val targets = languages[source.language]
-        if (targets == null) {
-            throw UnsupportedLanguageException(source)
-        } else if (target.language !in targets) {
-            throw UnsupportedLanguageException(target)
-        }
-
-        val params =
-            mutableMapOf(
-                "q" to text,
-                "source" to source.language,
-                "target" to target.language,
-                "format" to "text",
-            )
-        if (apiKey != null) {
-            params["api_key"] = apiKey
-        }
-
-        val response =
-            withContext(Dispatchers.IO) {
-                http.send(
-                    HttpRequest.newBuilder(createApiUri(endpoint, "translate", params))
-                        .header("Accept", "application/json")
-                        .POST(BodyPublishers.noBody())
-                        .build(),
-                    BodyHandlers.ofString(),
-                )
+    override fun translate(text: String, source: Locale, target: Locale) =
+        FlexScope.future {
+            if (source.language == "router" || target.language == "router") {
+                return@future "router"
+            } else if (text.isBlank() || source.language == target.language) {
+                return@future text
             }
 
-        val json = Json.parseToJsonElement(response.body()).jsonObject
-        if (response.statusCode() != 200) {
-            throw Exception("Failed to translate: ${json["error"]?.jsonPrimitive?.content} (code=${response.statusCode()})")
-        } else {
-            json["translatedText"]!!.jsonPrimitive.content
+            val targets = languages[source.language]
+            if (targets == null) {
+                throw UnsupportedLanguageException(source)
+            } else if (target.language !in targets) {
+                throw UnsupportedLanguageException(target)
+            }
+
+            val params =
+                mutableMapOf("q" to text, "source" to source.language, "target" to target.language, "format" to "text")
+            if (apiKey != null) {
+                params["api_key"] = apiKey
+            }
+
+            val response =
+                withContext(Dispatchers.IO) {
+                    http.send(
+                        HttpRequest.newBuilder(createApiUri(endpoint, "translate", params))
+                            .header("Accept", "application/json")
+                            .POST(BodyPublishers.noBody())
+                            .build(),
+                        BodyHandlers.ofString(),
+                    )
+                }
+
+            val json = Json.parseToJsonElement(response.body()).jsonObject
+            if (response.statusCode() != 200) {
+                throw Exception(
+                    "Failed to translate: ${json["error"]?.jsonPrimitive?.content} (code=${response.statusCode()})"
+                )
+            } else {
+                json["translatedText"]!!.jsonPrimitive.content
+            }
         }
-    }
 
     private fun fetchSupportedLanguages(): Map<String, Set<String>> {
         val response =

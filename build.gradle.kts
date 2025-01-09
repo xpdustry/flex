@@ -112,7 +112,7 @@ indra {
 
 spotless {
     kotlin {
-        ktlint()
+        ktfmt().kotlinlangStyle().configure { it.setMaxWidth(120) }
         licenseHeaderFile(rootProject.file("HEADER.txt"))
     }
     kotlinGradle {

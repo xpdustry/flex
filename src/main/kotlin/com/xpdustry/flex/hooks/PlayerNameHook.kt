@@ -32,10 +32,10 @@ import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.template.TemplateManager
+import kotlin.time.toJavaDuration
 import mindustry.Vars
 import mindustry.gen.Groups
 import org.slf4j.LoggerFactory
-import kotlin.time.toJavaDuration
 
 internal class PlayerNameHook(
     private val placeholders: PlaceholderPipeline,
@@ -44,7 +44,8 @@ internal class PlayerNameHook(
 ) : PluginListener {
     override fun onPluginInit() {
         if (config.name.enabled) {
-            Distributor.get().pluginScheduler
+            Distributor.get()
+                .pluginScheduler
                 .schedule(plugin)
                 .async(false)
                 .delay(1, MindustryTimeUnit.SECONDS)
@@ -62,7 +63,7 @@ internal class PlayerNameHook(
                         PlaceholderContext(
                             Distributor.get().audienceProvider.getPlayer(player),
                             "%template:${TemplateManager.NAME_TEMPLATE_NAME}%",
-                        ),
+                        )
                     )
                 if (result.length > 256) {
                     logger.warn("Possible name overflow for player {} ({}), resetting.", player.name(), player.uuid())

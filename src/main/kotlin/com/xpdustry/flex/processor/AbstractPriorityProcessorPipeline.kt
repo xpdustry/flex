@@ -35,23 +35,18 @@ public abstract class AbstractPriorityProcessorPipeline<I, O>(
     private val identifier: String,
 ) : PriorityProcessorPipeline<I, O> {
     private val _processors = ConcurrentHashMap<String, PriorityProcessor>()
-    public val processors: Map<String, PriorityProcessor> get() = Collections.unmodifiableMap(_processors)
+    public val processors: Map<String, PriorityProcessor>
+        get() = Collections.unmodifiableMap(_processors)
 
-    override fun register(
-        name: String,
-        priority: Priority,
-        processor: Processor<I, O>,
-    ) {
+    override fun register(name: String, priority: Priority, processor: Processor<I, O>) {
         val wrapped = PriorityProcessor(processor, priority)
         val verb = if (_processors.containsKey(name)) "Replaced" else "Registered"
         _processors[name] = wrapped
         plugin.logger.debug("$verb processor {} to {} with priority {}", name, identifier, priority)
     }
 
-    public inner class PriorityProcessor(
-        delegate: Processor<I, O>,
-        public val priority: Priority,
-    ) : Processor<I, O> by delegate, Comparable<PriorityProcessor> {
+    public inner class PriorityProcessor(delegate: Processor<I, O>, public val priority: Priority) :
+        Processor<I, O> by delegate, Comparable<PriorityProcessor> {
         override fun compareTo(other: PriorityProcessor): Int = priority.compareTo(other.priority)
     }
 }

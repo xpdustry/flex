@@ -46,20 +46,14 @@ import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 import org.slf4j.LoggerFactory
 
-internal class ChatMessageHook(
-    private val messages: MessagePipeline,
-    private val hooks: HooksConfig,
-) : PluginListener {
+internal class ChatMessageHook(private val messages: MessagePipeline, private val hooks: HooksConfig) : PluginListener {
     override fun onPluginInit() {
         if (hooks.chat) {
             Vars.net.handleServer(SendChatMessageCallPacket::class.java, ::interceptChatPacket)
         }
     }
 
-    private fun interceptChatPacket(
-        connection: NetConnection,
-        packet: SendChatMessageCallPacket,
-    ) {
+    private fun interceptChatPacket(connection: NetConnection, packet: SendChatMessageCallPacket) {
         if (connection.player == null || packet.message == null) {
             return
         }
@@ -68,12 +62,11 @@ internal class ChatMessageHook(
         var message = packet.message
 
         // do not receive chat messages from clients that are too young or not registered
-        if (Vars.net.server() &&
-            (
-                Time.timeSinceMillis(audience.player.con().connectTime) < 500 ||
+        if (
+            Vars.net.server() &&
+                (Time.timeSinceMillis(audience.player.con().connectTime) < 500 ||
                     !audience.player.con().hasConnected ||
-                    !audience.player.isAdded
-            )
+                    !audience.player.isAdded)
         ) {
             return
         }
@@ -96,15 +89,17 @@ internal class ChatMessageHook(
         FlexScope.launch {
             val isCommand = message.startsWith(prefix)
             var forServer =
-                messages.pump(
-                    MessageContext(
-                        audience,
-                        Distributor.get().audienceProvider.server,
-                        if (isCommand && message.length >= prefix.length) message.drop(prefix.length) else message,
-                        filter = true,
-                        if (isCommand) MessageContext.Kind.COMMAND else MessageContext.Kind.CHAT,
-                    ),
-                ).await()
+                messages
+                    .pump(
+                        MessageContext(
+                            audience,
+                            Distributor.get().audienceProvider.server,
+                            if (isCommand && message.length >= prefix.length) message.drop(prefix.length) else message,
+                            filter = true,
+                            if (isCommand) MessageContext.Kind.COMMAND else MessageContext.Kind.CHAT,
+                        )
+                    )
+                    .await()
 
             if (forServer.isBlank()) {
                 return@launch
@@ -128,9 +123,7 @@ internal class ChatMessageHook(
 
             root.info("&fi{}: {}", "&lc${audience.player.plainName()}", "&lw${Strings.stripColors(forServer)}")
 
-            Core.app.post {
-                Distributor.get().eventBus.post(FlexPlayerChatEvent(audience, forServer))
-            }
+            Core.app.post { Distributor.get().eventBus.post(FlexPlayerChatEvent(audience, forServer)) }
 
             messages.broadcast(audience, Distributor.get().audienceProvider.players, message).await()
         }

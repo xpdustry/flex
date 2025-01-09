@@ -36,7 +36,8 @@ internal class TemplateProcessor(
     private var templates: TemplateManager,
 ) : Processor<PlaceholderContext, String?>, FlexListener {
     override fun process(context: PlaceholderContext) =
-        templates.getTemplate(context.query)
+        templates
+            .getTemplate(context.query)
             ?.steps
             ?.map { step ->
                 val accepted =

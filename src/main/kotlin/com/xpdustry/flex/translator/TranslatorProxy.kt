@@ -28,20 +28,14 @@ package com.xpdustry.flex.translator
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.flex.FlexConfig
 import com.xpdustry.flex.FlexListener
-import org.slf4j.LoggerFactory
 import java.util.Locale
+import org.slf4j.LoggerFactory
 
-internal class TranslatorProxy(
-    private val plugin: MindustryPlugin,
-    config: TranslatorConfig.Backend,
-) : Translator, FlexListener {
+internal class TranslatorProxy(private val plugin: MindustryPlugin, config: TranslatorConfig.Backend) :
+    Translator, FlexListener {
     @Volatile private var translator = createTranslator(config)
 
-    override fun translate(
-        text: String,
-        source: Locale,
-        target: Locale,
-    ) = translator.translate(text, source, target)
+    override fun translate(text: String, source: Locale, target: Locale) = translator.translate(text, source, target)
 
     override fun onFlexConfigReload(config: FlexConfig) {
         translator = createTranslator(config.translator.backend)
@@ -51,14 +45,12 @@ internal class TranslatorProxy(
     private fun createTranslator(config: TranslatorConfig.Backend): Translator =
         when (config) {
             is TranslatorConfig.Backend.None -> Translator.None
-            is TranslatorConfig.Backend.LibreTranslate -> LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey?.value)
+            is TranslatorConfig.Backend.LibreTranslate ->
+                LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey?.value)
             is TranslatorConfig.Backend.DeepL -> DeepLTranslator(config.deeplApiKey.value, plugin.metadata.version)
             is TranslatorConfig.Backend.GoogleBasic -> GoogleBasicTranslator(config.googleBasicApiKey.value)
             is TranslatorConfig.Backend.Rolling ->
-                RollingTranslator(
-                    config.translators.map(::createTranslator),
-                    createTranslator(config.fallback),
-                )
+                RollingTranslator(config.translators.map(::createTranslator), createTranslator(config.fallback))
             is TranslatorConfig.Backend.Caching ->
                 CachingTranslator(
                     createTranslator(config.cachingTranslator),

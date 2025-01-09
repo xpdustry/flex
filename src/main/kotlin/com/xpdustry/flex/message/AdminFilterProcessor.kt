@@ -28,12 +28,12 @@ package com.xpdustry.flex.message
 import arc.Core
 import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.flex.processor.Processor
-import mindustry.Vars
-import mindustry.gen.Player
-import org.slf4j.LoggerFactory
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import mindustry.Vars
+import mindustry.gen.Player
+import org.slf4j.LoggerFactory
 
 internal object AdminFilterProcessor : Processor<MessageContext, CompletableFuture<String>> {
     private val logger = LoggerFactory.getLogger(AdminFilterProcessor::class.java)
@@ -41,18 +41,13 @@ internal object AdminFilterProcessor : Processor<MessageContext, CompletableFutu
 
     override fun process(context: MessageContext): CompletableFuture<String> =
         if (context.sender is PlayerAudience && context.kind == MessageContext.Kind.CHAT && context.filter) {
-            CompletableFuture.supplyAsync(
-                { process(context.sender.player, context.message) },
-                Core.app::post,
-            ).orTimeout(5, TimeUnit.SECONDS)
+            CompletableFuture.supplyAsync({ process(context.sender.player, context.message) }, Core.app::post)
+                .orTimeout(5, TimeUnit.SECONDS)
         } else {
             CompletableFuture.completedFuture(context.message)
         }
 
-    private fun process(
-        player: Player,
-        message: String,
-    ): String {
+    private fun process(player: Player, message: String): String {
         if (filtering.get()) {
             logger.debug(
                 "Stack overflow detected for message {} from player {} ({}), skipping admin filter",

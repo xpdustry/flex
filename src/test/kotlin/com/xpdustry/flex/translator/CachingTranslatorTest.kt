@@ -25,14 +25,14 @@
  */
 package com.xpdustry.flex.translator
 
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
 
 class CachingTranslatorTest {
     @Test
@@ -88,10 +88,7 @@ class CachingTranslatorTest {
         Assertions.assertEquals(2, translator.successCount)
     }
 
-    private fun assertThrowsCompletable(
-        exception: KClass<out Throwable>,
-        future: CompletableFuture<*>,
-    ) {
+    private fun assertThrowsCompletable(exception: KClass<out Throwable>, future: CompletableFuture<*>) {
         try {
             future.join()
         } catch (e: CompletionException) {

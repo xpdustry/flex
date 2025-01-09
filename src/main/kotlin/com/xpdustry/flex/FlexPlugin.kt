@@ -83,7 +83,13 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         )
         templates.setDefaultTemplate(
             TemplateManager.CHAT_TEMPLATE_NAME,
-            Template(listOf(TemplateStep("[coral][[[%audience:color%]%audience:name_colored%[coral]]:[white] %argument:flex:message%"))),
+            Template(
+                listOf(
+                    TemplateStep(
+                        "[coral][[[%audience:color%]%audience:name_colored%[coral]]:[white] %argument:flex:message%"
+                    )
+                )
+            ),
         )
 
         placeholders = PlaceholderPipelineImpl(this)
@@ -124,17 +130,16 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     private fun loadConfig(): FlexConfig {
         val file = directory.resolve("config.yaml")
 
-        val loader =
-            ConfigLoader {
-                withClassLoader(javaClass.classLoader)
-                addDefaults()
-                addPathSource(file)
-                addDecoder(TemplateFilterDecoder())
-                withReport()
-                withReportPrintFn(logger::debug)
-                addParameterMapper(KebabCaseParamMapper)
-                strict()
-            }
+        val loader = ConfigLoader {
+            withClassLoader(javaClass.classLoader)
+            addDefaults()
+            addPathSource(file)
+            addDecoder(TemplateFilterDecoder())
+            withReport()
+            withReportPrintFn(logger::debug)
+            addParameterMapper(KebabCaseParamMapper)
+            strict()
+        }
 
         if (file.notExists()) {
             logger.warn("Configuration file does not exist, using defaults")

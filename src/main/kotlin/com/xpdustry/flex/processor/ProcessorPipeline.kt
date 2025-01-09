@@ -26,10 +26,7 @@
 package com.xpdustry.flex.processor
 
 public interface ProcessorPipeline<I, O> {
-    public fun register(
-        name: String,
-        processor: Processor<I, O>,
-    )
+    public fun register(name: String, processor: Processor<I, O>)
 
     public fun pump(context: I): O
 }

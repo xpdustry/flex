@@ -30,10 +30,7 @@ public interface TemplateManager {
 
     public fun hasTemplate(name: String): Boolean
 
-    public fun setDefaultTemplate(
-        name: String,
-        template: Template,
-    )
+    public fun setDefaultTemplate(name: String, template: Template)
 
     public companion object {
         public const val JOIN_TEMPLATE_NAME: String = "mindustry_join"

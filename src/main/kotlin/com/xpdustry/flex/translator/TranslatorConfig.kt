@@ -44,10 +44,7 @@ internal data class TranslatorConfig(
 
         data class GoogleBasic(val googleBasicApiKey: Secret) : Backend
 
-        data class Rolling(
-            val translators: List<Backend>,
-            val fallback: Backend = None,
-        ) : Backend
+        data class Rolling(val translators: List<Backend>, val fallback: Backend = None) : Backend
 
         data class Caching(
             val successRetention: Duration = 10.minutes,

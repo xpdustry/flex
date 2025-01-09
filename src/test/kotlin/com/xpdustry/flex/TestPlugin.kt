@@ -34,8 +34,5 @@ object TestPlugin : MindustryPlugin {
     override fun getLogger(): Logger = LoggerFactory.getLogger(TestPlugin::class.java)
 
     override fun getMetadata(): PluginMetadata =
-        PluginMetadata.builder()
-            .setName("test")
-            .setDisplayName("TestPlugin")
-            .build()
+        PluginMetadata.builder().setName("test").setDisplayName("TestPlugin").build()
 }

@@ -42,5 +42,5 @@ internal val FlexScope =
                 (Vars.mods.getMod(FlexPlugin::class.java).main as MindustryPlugin)
                     .logger
                     .error("An uncaught error occurred", exception)
-            },
+            }
     )

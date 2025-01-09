@@ -38,7 +38,6 @@ public interface FlexAPI {
     public val templates: TemplateManager
 
     public companion object {
-        @JvmStatic
-        public fun get(): FlexAPI = Vars.mods.getMod(FlexPlugin::class.java).main as FlexAPI
+        @JvmStatic public fun get(): FlexAPI = Vars.mods.getMod(FlexPlugin::class.java).main as FlexAPI
     }
 }
