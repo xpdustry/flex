@@ -27,6 +27,7 @@ package com.xpdustry.flex.placeholder
 
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.flex.processor.AbstractPriorityProcessorPipeline
+import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 internal class PlaceholderPipelineImpl(
@@ -45,7 +46,7 @@ internal class PlaceholderPipelineImpl(
                     null
                 }
             if (replacement != null) {
-                matcher.appendReplacement(builder, replacement)
+                matcher.appendReplacement(builder, Matcher.quoteReplacement(replacement))
             } else {
                 matcher.appendReplacement(builder, matcher.group())
             }

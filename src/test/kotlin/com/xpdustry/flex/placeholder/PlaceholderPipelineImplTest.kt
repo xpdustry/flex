@@ -40,6 +40,8 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 
 class PlaceholderPipelineImplTest {
     @BeforeEach
@@ -109,5 +111,16 @@ class PlaceholderPipelineImplTest {
         val processor = TemplateProcessor(pipeline, TemplateManagerImpl(mapOf("test" to listOf(TemplateStep("hello %test% world")))))
         pipeline.register("template", processor)
         Assertions.assertEquals("hello value world", pipeline.pump(PlaceholderContext(Audience.empty(), "%template:test%")))
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["$", "\\"])
+    fun `test escape meta chars`(char: String) {
+        val pipeline = PlaceholderPipelineImpl(TestPlugin)
+        pipeline.register("test") { char }
+        val processor = TemplateProcessor(pipeline, TemplateManagerImpl(mapOf("test" to listOf(TemplateStep("hello %test% world")))))
+        pipeline.register("template", processor)
+        Assertions.assertEquals(char, pipeline.pump(PlaceholderContext(Audience.empty(), char)))
+        Assertions.assertEquals("hello $char world", pipeline.pump(PlaceholderContext(Audience.empty(), "%template:test%")))
     }
 }
