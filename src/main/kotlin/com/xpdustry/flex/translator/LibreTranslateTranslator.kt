@@ -113,8 +113,15 @@ internal class LibreTranslateTranslator(
                 Json.parseToJsonElement(response.body()).jsonArray.associate { entry ->
                     val obj = entry.jsonObject
                     obj["code"]!!.jsonPrimitive.content to
-                        obj["targets"]!!.jsonArray.mapTo(mutableSetOf()) { it.jsonPrimitive.content }
+                        obj["targets"]?.jsonArray.orEmpty().mapTo(mutableSetOf()) { it.jsonPrimitive.content }
                 }
+            // Some libre translate instances do not provide the targets for a given code so
+            // Let's assume all languages are translatable to all other supported languages
+            for ((code, targets) in result) {
+                if (targets.isEmpty()) {
+                    result[code]?.addAll(result.keys)
+                }
+            }
             result + (AUTO_DETECT.language to result.keys.toSet())
         }
     }
