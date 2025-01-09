@@ -119,7 +119,7 @@ internal class MessagePipelineImpl(
                         target.sendMessage(
                             Distributor.get().mindustryComponentDecoder.decode(formatted),
                             Distributor.get().mindustryComponentDecoder.decode(processed),
-                            if (config.forceFooClientCompatibility && sender.isFooClient()) {
+                            if (config.fooClientCompatibility && sender.isFooClient()) {
                                 Audience.empty()
                             } else {
                                 sender

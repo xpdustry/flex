@@ -25,4 +25,4 @@
  */
 package com.xpdustry.flex.message
 
-internal data class MessageConfig(val forceFooClientCompatibility: Boolean = true)
+internal data class MessageConfig(val fooClientCompatibility: Boolean = true)
