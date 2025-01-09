@@ -32,8 +32,9 @@ import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.distributor.api.plugin.PluginListener
+import com.xpdustry.flex.FlexConfig
 import com.xpdustry.flex.FlexKeys
+import com.xpdustry.flex.FlexListener
 import com.xpdustry.flex.FlexScope
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
@@ -45,15 +46,25 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.future.future
 import mindustry.Vars
 import mindustry.game.EventType
+import org.slf4j.LoggerFactory
 
-internal class MessagePipelineImpl(plugin: MindustryPlugin, private val placeholders: PlaceholderPipeline) :
+internal class MessagePipelineImpl(
+    plugin: MindustryPlugin,
+    private val placeholders: PlaceholderPipeline,
+    private var config: MessageConfig,
+) :
     AbstractPriorityProcessorPipeline<MessageContext, CompletableFuture<String>>(plugin, "message"),
     MessagePipeline,
-    PluginListener {
+    FlexListener {
     private val foo = mutableSetOf<MUUID>()
 
     override fun onPluginInit() {
         Vars.netServer.addPacketHandler("fooCheck") { player, _ -> foo += MUUID.from(player) }
+    }
+
+    override fun onFlexConfigReload(config: FlexConfig) {
+        this.config = config.messages
+        logger.info("Reloaded message pipeline config")
     }
 
     override fun pump(context: MessageContext) =
@@ -108,7 +119,11 @@ internal class MessagePipelineImpl(plugin: MindustryPlugin, private val placehol
                         target.sendMessage(
                             Distributor.get().mindustryComponentDecoder.decode(formatted),
                             Distributor.get().mindustryComponentDecoder.decode(processed),
-                            sender.takeUnless(::isFooClient) ?: Audience.empty(),
+                            if (config.forceFooClientCompatibility && sender.isFooClient()) {
+                                Audience.empty()
+                            } else {
+                                sender
+                            },
                         )
                     }
                 }
@@ -121,6 +136,9 @@ internal class MessagePipelineImpl(plugin: MindustryPlugin, private val placehol
         foo -= MUUID.from(event.player)
     }
 
-    private fun isFooClient(audience: Audience) =
-        audience.metadata[StandardKeys.MUUID]?.let { foo.contains(it) } ?: false
+    private fun Audience.isFooClient() = metadata[StandardKeys.MUUID]?.let(foo::contains) ?: false
+
+    companion object {
+        private val logger = LoggerFactory.getLogger(MessagePipelineImpl::class.java)
+    }
 }

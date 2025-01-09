@@ -99,7 +99,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
         placeholders.register("permission", PermissionProcessor)
         placeholders.register("audience", AudienceProcessor)
 
-        messages = MessagePipelineImpl(this, placeholders).also(::addListener)
+        messages = MessagePipelineImpl(this, placeholders, config.messages).also(::addListener)
         messages.register("admin_filter", Priority.HIGH, AdminFilterProcessor)
         if (config.translator.registerMessageProcessor) {
             messages.register("translator", Priority.LOW, TranslationProcessor(translator, placeholders))

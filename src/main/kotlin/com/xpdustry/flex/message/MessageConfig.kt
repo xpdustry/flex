@@ -23,16 +23,6 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex
+package com.xpdustry.flex.message
 
-import com.xpdustry.flex.hooks.HooksConfig
-import com.xpdustry.flex.message.MessageConfig
-import com.xpdustry.flex.placeholder.template.TemplateConfig
-import com.xpdustry.flex.translator.TranslatorConfig
-
-internal data class FlexConfig(
-    val translator: TranslatorConfig = TranslatorConfig(),
-    val hooks: HooksConfig = HooksConfig(),
-    val templates: TemplateConfig = emptyMap(),
-    val messages: MessageConfig = MessageConfig(),
-)
+internal data class MessageConfig(val forceFooClientCompatibility: Boolean = true)
