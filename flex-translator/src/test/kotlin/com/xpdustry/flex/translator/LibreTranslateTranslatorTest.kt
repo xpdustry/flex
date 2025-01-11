@@ -23,9 +23,29 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.util
+package com.xpdustry.flex.translator
 
+import java.net.URI
+import java.util.Locale
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.function.ThrowingSupplier
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 
-fun <T> assertDoesNotThrowsAndReturns(block: () -> T): T = Assertions.assertDoesNotThrow(ThrowingSupplier(block))
+class LibreTranslateTranslatorTest {
+    @EnabledIfEnvironmentVariable(named = ENDPOINT_ENV, matches = ".+")
+    @EnabledIfEnvironmentVariable(named = API_KEY_ENV, matches = ".+")
+    @Test
+    fun test() {
+        val translator = assertDoesNotThrowsAndReturns {
+            LibreTranslateTranslator(URI(System.getenv(ENDPOINT_ENV)), Runnable::run, System.getenv(API_KEY_ENV))
+        }
+        Assertions.assertTrue(translator.languages.isNotEmpty())
+        Assertions.assertTrue(translator.languages.values.flatten().isNotEmpty())
+        Assertions.assertDoesNotThrow { translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join() }
+    }
+
+    companion object {
+        private const val ENDPOINT_ENV = "FLEX_TEST_TRANSLATOR_LT_ENDPOINT"
+        private const val API_KEY_ENV = "FLEX_TEST_TRANSLATOR_LT_API_KEY"
+    }
+}

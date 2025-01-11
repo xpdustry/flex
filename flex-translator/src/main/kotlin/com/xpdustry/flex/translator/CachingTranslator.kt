@@ -33,14 +33,26 @@ import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
-internal class CachingTranslator(
-    translator: Translator,
-    maximumSize: Int,
-    val successRetention: Duration,
-    val failureRetention: Duration,
+public class CachingTranslator
+internal constructor(
+    public val translator: Translator,
+    executor: Executor,
+    public val maximumSize: Int,
+    public val successRetention: Duration,
+    public val failureRetention: Duration,
     ticker: Ticker = Ticker.systemTicker(),
 ) : Translator {
+    public constructor(
+        translator: Translator,
+        executor: Executor,
+        maximumSize: Int = 1000,
+        successRetention: Duration = 10.minutes,
+        failureRetention: Duration = 10.seconds,
+    ) : this(translator, executor, maximumSize, successRetention, failureRetention, Ticker.systemTicker())
+
     init {
         require(maximumSize > 0) { "maximumSize must be positive" }
         require(successRetention >= Duration.ZERO) { "successRetention must be non-negative" }
@@ -52,7 +64,8 @@ internal class CachingTranslator(
             .expireAfter(TranslationExpiry())
             .maximumSize(maximumSize.toLong())
             .ticker(ticker)
-            .buildAsync(TranslationLoader(translator))
+            .executor(executor)
+            .buildAsync(TranslationLoader())
 
     override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
         cache
@@ -64,8 +77,7 @@ internal class CachingTranslator(
                 }
             }
 
-    private class TranslationLoader(private val translator: Translator) :
-        AsyncCacheLoader<TranslationKey, TranslationResult> {
+    private inner class TranslationLoader : AsyncCacheLoader<TranslationKey, TranslationResult> {
         override fun asyncLoad(key: TranslationKey, executor: Executor): CompletableFuture<TranslationResult> =
             translator
                 .translate(key.text, key.source, key.target)

@@ -25,14 +25,14 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.flex.FlexConfig
 import com.xpdustry.flex.FlexListener
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 import org.slf4j.LoggerFactory
 
-internal class TranslatorProxy(private val plugin: MindustryPlugin, config: TranslatorConfig.Backend) :
-    Translator, FlexListener {
+internal class TranslatorProxy(config: TranslatorConfig.Backend) : Translator, FlexListener {
     @Volatile private var translator = createTranslator(config)
 
     override fun translate(text: String, source: Locale, target: Locale) = translator.translate(text, source, target)
@@ -42,23 +42,26 @@ internal class TranslatorProxy(private val plugin: MindustryPlugin, config: Tran
         logger.info("Translator reloaded, replaced with {}", translator.javaClass.simpleName)
     }
 
-    private fun createTranslator(config: TranslatorConfig.Backend): Translator =
-        when (config) {
+    private fun createTranslator(config: TranslatorConfig.Backend): Translator {
+        val executor = Dispatchers.IO.asExecutor()
+        return when (config) {
             is TranslatorConfig.Backend.None -> Translator.None
             is TranslatorConfig.Backend.LibreTranslate ->
-                LibreTranslateTranslator(config.ltEndpoint, config.ltApiKey?.value)
-            is TranslatorConfig.Backend.DeepL -> DeepLTranslator(config.deeplApiKey.value, plugin.metadata.version)
-            is TranslatorConfig.Backend.GoogleBasic -> GoogleBasicTranslator(config.googleBasicApiKey.value)
+                LibreTranslateTranslator(config.ltEndpoint, executor, config.ltApiKey?.value)
+            is TranslatorConfig.Backend.DeepL -> DeepLTranslator(config.deeplApiKey.value, executor)
+            is TranslatorConfig.Backend.GoogleBasic -> GoogleBasicTranslator(config.googleBasicApiKey.value, executor)
             is TranslatorConfig.Backend.Rolling ->
                 RollingTranslator(config.translators.map(::createTranslator), createTranslator(config.fallback))
             is TranslatorConfig.Backend.Caching ->
                 CachingTranslator(
                     createTranslator(config.cachingTranslator),
+                    executor,
                     config.maximumSize,
                     config.successRetention,
                     config.failureRetention,
                 )
         }
+    }
 
     companion object {
         private val logger = LoggerFactory.getLogger(TranslatorProxy::class.java)

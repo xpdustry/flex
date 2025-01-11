@@ -25,32 +25,34 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.flex.FlexScope
 import java.util.Locale
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.future.future
-import org.slf4j.LoggerFactory
 
-internal class RollingTranslator(private val translators: List<Translator>, private val fallback: Translator) :
-    Translator {
+public class RollingTranslator(public val translators: List<Translator>, public val fallback: Translator) : Translator {
     private val cursor = AtomicInteger(0)
 
-    override fun translate(text: String, source: Locale, target: Locale) =
-        FlexScope.future {
-            val cursor = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 }
-            for (i in translators.indices) {
-                val translator = translators[(cursor + i) % translators.size]
-                try {
-                    return@future translator.translate(text, source, target).await()
-                } catch (e: Exception) {
-                    logger.debug("Translator {} failed", translator.javaClass.simpleName, e)
-                }
-            }
-            return@future fallback.translate(text, source, target).await()
-        }
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> {
+        val cursor = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 }
+        return translate0(text, source, target, cursor, 0)
+    }
 
-    companion object {
-        private val logger = LoggerFactory.getLogger(RollingTranslator::class.java)
+    private fun translate0(
+        text: String,
+        source: Locale,
+        target: Locale,
+        cursor: Int,
+        index: Int,
+    ): CompletableFuture<String> {
+        if (index >= translators.size) return fallback.translate(text, source, target)
+        val translator = translators[(cursor + index) % translators.size]
+        return translator.translate(text, source, target).exceptionallyCompose { throwable ->
+            logger.log(System.Logger.Level.DEBUG, "Translator {0} failed", translator.javaClass.simpleName, throwable)
+            translate0(text, source, target, cursor, index + 1)
+        }
+    }
+
+    private companion object {
+        @JvmStatic private val logger = System.getLogger(RollingTranslator::class.java.name)
     }
 }

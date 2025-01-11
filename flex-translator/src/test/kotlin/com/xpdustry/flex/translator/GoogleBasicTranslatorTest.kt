@@ -25,28 +25,23 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.flex.util.assertDoesNotThrowsAndReturns
-import java.net.URI
 import java.util.Locale
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 
-class LibreTranslateTranslatorTest {
-    @EnabledIfEnvironmentVariable(named = ENDPOINT_ENV, matches = ".+")
+class GoogleBasicTranslatorTest {
     @EnabledIfEnvironmentVariable(named = API_KEY_ENV, matches = ".+")
     @Test
     fun test() {
         val translator = assertDoesNotThrowsAndReturns {
-            LibreTranslateTranslator(URI(System.getenv(ENDPOINT_ENV)), System.getenv(API_KEY_ENV))
+            GoogleBasicTranslator(System.getenv(API_KEY_ENV), Runnable::run)
         }
-        Assertions.assertTrue(translator.languages.isNotEmpty())
-        Assertions.assertTrue(translator.languages.values.flatten().isNotEmpty())
+        Assertions.assertTrue(translator.supported.isNotEmpty())
         Assertions.assertDoesNotThrow { translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join() }
     }
 
     companion object {
-        private const val ENDPOINT_ENV = "FLEX_TEST_TRANSLATOR_LT_ENDPOINT"
-        private const val API_KEY_ENV = "FLEX_TEST_TRANSLATOR_LT_API_KEY"
+        private const val API_KEY_ENV = "FLEX_TEST_TRANSLATOR_GOOGLE_BASIC_API_KEY"
     }
 }

@@ -48,7 +48,7 @@ class CachingTranslatorTest {
         translator.results[key2] = val2
 
         val ticker = NavigableTicker()
-        val caching = CachingTranslator(translator, 1000, 5.minutes, 5.seconds, ticker)
+        val caching = CachingTranslator(translator, Runnable::run, 1000, 5.minutes, 5.seconds, ticker)
 
         Assertions.assertEquals(val1.translation, caching.translate(key1.text, key1.source, key1.target).join())
         Assertions.assertEquals(1, translator.successCount)

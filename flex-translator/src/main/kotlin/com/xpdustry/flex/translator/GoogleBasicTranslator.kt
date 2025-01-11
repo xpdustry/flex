@@ -25,75 +25,73 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.flex.FlexScope
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.future.future
-import kotlinx.coroutines.withContext
+import java.util.concurrent.Executor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-internal class GoogleBasicTranslator(private val apiKey: String) : Translator {
-    private val http = HttpClient.newHttpClient()
+// TODO Add backoff and retries (in case of 429)
+public class GoogleBasicTranslator(private val apiKey: String, executor: Executor) : Translator {
+    private val http = HttpClient.newBuilder().executor(executor).build()
     internal val supported: Set<Locale> = fetchSupportedLanguages()
 
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
-        FlexScope.future {
-            if (source.language == "router" || target.language == "router") {
-                return@future "router"
-            } else if (text.isBlank() || source.language == target.language) {
-                return@future text
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> {
+        if (source == Translator.ROUTER || target == Translator.ROUTER) {
+            return CompletableFuture.completedFuture("router")
+        } else if (text.isBlank() || source.language == target.language) {
+            return CompletableFuture.completedFuture(text)
+        }
+
+        var fixedSource = source
+        var fixedTarget = target
+        if (source != Translator.AUTO_DETECT && source !in supported) {
+            fixedSource = Locale.forLanguageTag(source.language)
+            if (fixedSource !in supported) {
+                throw UnsupportedLanguageException(source)
             }
-
-            var fixedSource = source
-            var fixedTarget = target
-            if (source != Translator.AUTO_DETECT && source !in supported) {
-                fixedSource = Locale.forLanguageTag(source.language)
-                if (fixedSource !in supported) {
-                    throw UnsupportedLanguageException(source)
-                }
-            } else if (target !in supported) {
-                fixedTarget = Locale.forLanguageTag(target.language)
-                if (fixedTarget !in supported) {
-                    throw UnsupportedLanguageException(target)
-                }
+        } else if (target !in supported) {
+            fixedTarget = Locale.forLanguageTag(target.language)
+            if (fixedTarget !in supported) {
+                throw UnsupportedLanguageException(target)
             }
+        }
 
-            val parameters =
-                mutableMapOf("key" to apiKey, "q" to text, "target" to fixedTarget.toLanguageTag(), "format" to "text")
+        val parameters =
+            mutableMapOf("key" to apiKey, "q" to text, "target" to fixedTarget.toLanguageTag(), "format" to "text")
 
-            if (fixedSource != Translator.AUTO_DETECT) {
-                parameters["source"] = fixedSource.toLanguageTag()
-            }
+        if (fixedSource != Translator.AUTO_DETECT) {
+            parameters["source"] = fixedSource.toLanguageTag()
+        }
 
-            val response =
-                withContext(Dispatchers.IO) {
-                    http.send(
-                        HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT, parameters)).GET().build(),
-                        HttpResponse.BodyHandlers.ofString(),
+        return http
+            .sendAsync(
+                HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT, parameters)).GET().build(),
+                HttpResponse.BodyHandlers.ofString(),
+            )
+            .thenCompose { response ->
+                if (response.statusCode() != 200) {
+                    CompletableFuture.failedFuture(Exception("Failed to translate text: ${response.statusCode()}"))
+                } else {
+                    CompletableFuture.completedFuture(
+                        Json.parseToJsonElement(response.body())
+                            .jsonObject["data"]!!
+                            .jsonObject["translations"]!!
+                            .jsonArray
+                            .first()
+                            .jsonObject["translatedText"]!!
+                            .jsonPrimitive
+                            .content
                     )
                 }
-
-            if (response.statusCode() != 200) {
-                error("Failed to translate text: ${response.statusCode()}")
             }
-
-            Json.parseToJsonElement(response.body())
-                .jsonObject["data"]!!
-                .jsonObject["translations"]!!
-                .jsonArray
-                .first()
-                .jsonObject["translatedText"]!!
-                .jsonPrimitive
-                .content
-        }
+    }
 
     private fun fetchSupportedLanguages(): Set<Locale> {
         val response =
@@ -114,7 +112,7 @@ internal class GoogleBasicTranslator(private val apiKey: String) : Translator {
             .toSet()
     }
 
-    companion object {
-        private val TRANSLATION_V2_ENDPOINT = URI("https://translation.googleapis.com/language/translate/v2")
+    private companion object {
+        @JvmStatic private val TRANSLATION_V2_ENDPOINT = URI("https://translation.googleapis.com/language/translate/v2")
     }
 }
