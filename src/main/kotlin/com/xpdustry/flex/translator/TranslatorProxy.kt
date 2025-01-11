@@ -45,7 +45,7 @@ internal class TranslatorProxy(config: TranslatorConfig.Backend) : Translator, F
     private fun createTranslator(config: TranslatorConfig.Backend): Translator {
         val executor = Dispatchers.IO.asExecutor()
         return when (config) {
-            is TranslatorConfig.Backend.None -> Translator.None
+            is TranslatorConfig.Backend.None -> NoopTranslator
             is TranslatorConfig.Backend.LibreTranslate ->
                 LibreTranslateTranslator(config.ltEndpoint, executor, config.ltApiKey?.value)
             is TranslatorConfig.Backend.DeepL -> DeepLTranslator(config.deeplApiKey.value, executor)

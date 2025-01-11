@@ -66,7 +66,7 @@ internal class FlexPlugin : AbstractMindustryPlugin(), FlexAPI {
     override fun onInit() {
         val config = loadConfig()
 
-        translator = TranslatorProxy(this, config.translator.backend).also(::addListener)
+        translator = TranslatorProxy(config.translator.backend).also(::addListener)
 
         templates = TemplateManagerImpl(config.templates).also(::addListener)
         templates.setDefaultTemplate(
