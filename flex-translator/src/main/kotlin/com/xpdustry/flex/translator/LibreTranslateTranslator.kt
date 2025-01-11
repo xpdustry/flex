@@ -40,11 +40,9 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 // TODO Add backoff and retries (in case of 429)
-public class LibreTranslateTranslator(
-    private val endpoint: URI,
-    executor: Executor,
-    private val apiKey: String? = null,
-) : Translator {
+public class LibreTranslateTranslator
+@JvmOverloads
+constructor(private val endpoint: URI, executor: Executor, private val apiKey: String? = null) : Translator {
     private val http = HttpClient.newBuilder().executor(executor).build()
     internal val languages: Map<String, Set<String>> = fetchSupportedLanguages()
 

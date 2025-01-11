@@ -31,6 +31,7 @@ import java.util.concurrent.CompletionException
 import kotlin.reflect.KClass
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
@@ -48,7 +49,15 @@ class CachingTranslatorTest {
         translator.results[key2] = val2
 
         val ticker = NavigableTicker()
-        val caching = CachingTranslator(translator, Runnable::run, 1000, 5.minutes, 5.seconds, ticker)
+        val caching =
+            CachingTranslator(
+                translator,
+                Runnable::run,
+                1000,
+                5.minutes.toJavaDuration(),
+                5.seconds.toJavaDuration(),
+                ticker,
+            )
 
         Assertions.assertEquals(val1.translation, caching.translate(key1.text, key1.source, key1.target).join())
         Assertions.assertEquals(1, translator.successCount)

@@ -21,7 +21,6 @@ distributor = "4.1.0"
 hoplite = "2.9.0"
 deepl = "1.7.0"
 caffeine = "3.1.8"
-lingua = "1.2.2"
 
 # testing
 junit = "5.11.4"
@@ -39,7 +38,6 @@ hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "ho
 deepl = { module = "com.deepl.api:deepl-java", version.ref = "deepl" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
-lingua = { module = "com.github.pemistahl:lingua", version.ref = "lingua" }
 
 # testing
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }

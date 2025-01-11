@@ -28,6 +28,7 @@ package com.xpdustry.flex.translator
 import com.xpdustry.flex.FlexConfig
 import com.xpdustry.flex.FlexListener
 import java.util.Locale
+import kotlin.time.toJavaDuration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import org.slf4j.LoggerFactory
@@ -57,8 +58,8 @@ internal class TranslatorProxy(config: TranslatorConfig.Backend) : Translator, F
                     createTranslator(config.cachingTranslator),
                     executor,
                     config.maximumSize,
-                    config.successRetention,
-                    config.failureRetention,
+                    config.successRetention.toJavaDuration(),
+                    config.failureRetention.toJavaDuration(),
                 )
         }
     }

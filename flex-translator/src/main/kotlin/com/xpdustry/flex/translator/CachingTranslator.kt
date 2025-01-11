@@ -29,12 +29,10 @@ import com.github.benmanes.caffeine.cache.AsyncCacheLoader
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.github.benmanes.caffeine.cache.Expiry
 import com.github.benmanes.caffeine.cache.Ticker
+import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 public class CachingTranslator
 internal constructor(
@@ -45,12 +43,13 @@ internal constructor(
     public val failureRetention: Duration,
     ticker: Ticker = Ticker.systemTicker(),
 ) : Translator {
+    @JvmOverloads
     public constructor(
         translator: Translator,
         executor: Executor,
         maximumSize: Int = 1000,
-        successRetention: Duration = 10.minutes,
-        failureRetention: Duration = 10.seconds,
+        successRetention: Duration = Duration.ofMinutes(10),
+        failureRetention: Duration = Duration.ofSeconds(10),
     ) : this(translator, executor, maximumSize, successRetention, failureRetention, Ticker.systemTicker())
 
     init {
@@ -88,8 +87,8 @@ internal constructor(
     private inner class TranslationExpiry : Expiry<TranslationKey, TranslationResult> {
         override fun expireAfterCreate(key: TranslationKey, value: TranslationResult, currentTime: Long) =
             when (value) {
-                is TranslationResult.Success -> successRetention.inWholeNanoseconds
-                is TranslationResult.Failure -> failureRetention.inWholeNanoseconds
+                is TranslationResult.Success -> successRetention.toNanos()
+                is TranslationResult.Failure -> failureRetention.toNanos()
             }
 
         override fun expireAfterUpdate(
@@ -99,8 +98,8 @@ internal constructor(
             currentDuration: Long,
         ) =
             when (value) {
-                is TranslationResult.Success -> successRetention.inWholeNanoseconds
-                is TranslationResult.Failure -> failureRetention.inWholeNanoseconds
+                is TranslationResult.Success -> successRetention.toNanos()
+                is TranslationResult.Failure -> failureRetention.toNanos()
             }
 
         override fun expireAfterRead(
@@ -110,7 +109,7 @@ internal constructor(
             currentDuration: Long,
         ) =
             when (value) {
-                is TranslationResult.Success -> successRetention.inWholeNanoseconds
+                is TranslationResult.Success -> successRetention.toNanos()
                 is TranslationResult.Failure -> currentDuration
             }
     }
