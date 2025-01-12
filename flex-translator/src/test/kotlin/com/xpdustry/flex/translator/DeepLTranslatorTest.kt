@@ -37,7 +37,14 @@ class DeepLTranslatorTest {
         val translator = assertDoesNotThrowsAndReturns { DeepLTranslator(System.getenv(API_KEY_ENV), Runnable::run) }
         Assertions.assertTrue(translator.sourceLanguages.isNotEmpty())
         Assertions.assertTrue(translator.targetLanguages.isNotEmpty())
-        Assertions.assertDoesNotThrow { translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join() }
+        Assertions.assertDoesNotThrow {
+            val result = translator.translateDetecting("Bonjour", Locale.FRENCH, Locale.ENGLISH).join()
+            Assertions.assertEquals(Locale.FRENCH.language, result.detected?.language)
+        }
+        Assertions.assertDoesNotThrow {
+            val result = translator.translateDetecting("Bonjour", Translator.AUTO_DETECT, Locale.ENGLISH).join()
+            Assertions.assertEquals(Locale.FRENCH.language, result.detected?.language)
+        }
     }
 
     companion object {

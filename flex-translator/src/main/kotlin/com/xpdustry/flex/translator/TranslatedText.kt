@@ -25,8 +25,6 @@
  */
 package com.xpdustry.flex.translator
 
-internal sealed interface TranslationResult {
-    data class Success(val translation: String) : TranslationResult
+import java.util.Locale
 
-    data class Failure(val throwable: Throwable) : TranslationResult
-}
+public data class TranslatedText @JvmOverloads constructor(val text: String, val detected: Locale? = null)

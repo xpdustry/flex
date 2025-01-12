@@ -29,11 +29,15 @@ import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 public interface Translator {
-    // TODO For v2, replace the result String to TranslatedText(value, locale?)
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
     public fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String>
+
+    public fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
+        translate(text, source, target).thenApply { TranslatedText(it, target) }
 
     @Deprecated("Deprecated", ReplaceWith("NoopTranslator", imports = ["com.xpdustry.flex.NoopTranslator"]))
     public object None : Translator {
+        @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
         override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
             CompletableFuture.failedFuture(UnsupportedLanguageException(target))
     }

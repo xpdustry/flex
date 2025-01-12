@@ -69,7 +69,10 @@ public open class TranslationProcessor(
 
             val raw = Strings.stripColors(context.message).lowercase()
             try {
-                val result = withTimeout(3.seconds) { translator.translate(raw, sourceLocale, targetLocale).await() }
+                val result =
+                    withTimeout(3.seconds) {
+                        translator.translateDetecting(raw, sourceLocale, targetLocale).await().text
+                    }
                 val formatted =
                     placeholders.pump(
                         PlaceholderContext(

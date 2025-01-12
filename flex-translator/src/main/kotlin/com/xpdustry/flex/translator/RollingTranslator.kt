@@ -32,7 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger
 public class RollingTranslator(public val translators: List<Translator>, public val fallback: Translator) : Translator {
     private val cursor = AtomicInteger(0)
 
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> {
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
+        translateDetecting(text, source, target).thenApply(TranslatedText::text)
+
+    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
         val cursor = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 }
         return translate0(text, source, target, cursor, 0)
     }
@@ -43,10 +47,10 @@ public class RollingTranslator(public val translators: List<Translator>, public 
         target: Locale,
         cursor: Int,
         index: Int,
-    ): CompletableFuture<String> {
-        if (index >= translators.size) return fallback.translate(text, source, target)
+    ): CompletableFuture<TranslatedText> {
+        if (index >= translators.size) return fallback.translateDetecting(text, source, target)
         val translator = translators[(cursor + index) % translators.size]
-        return translator.translate(text, source, target).exceptionallyCompose { throwable ->
+        return translator.translateDetecting(text, source, target).exceptionallyCompose { throwable ->
             logger.log(System.Logger.Level.DEBUG, "Translator {0} failed", translator.javaClass.simpleName, throwable)
             translate0(text, source, target, cursor, index + 1)
         }

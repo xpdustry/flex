@@ -29,6 +29,7 @@ import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 public object NoopTranslator : Translator {
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
     override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
         CompletableFuture.failedFuture(UnsupportedLanguageException(target))
 }

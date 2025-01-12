@@ -41,9 +41,9 @@ class CachingTranslatorTest {
         val translator = TestTranslator()
 
         val key1 = TranslationKey("hello", Locale.ENGLISH, Locale.FRENCH)
-        val val1 = TranslationResult.Success("bonjour")
+        val val1 = translationSuccess("bonjour")
         val key2 = TranslationKey("hello", Locale.ENGLISH, Locale.CHINESE)
-        val val2 = TranslationResult.Failure(RateLimitedException())
+        val val2 = translationFailure(RateLimitedException())
 
         translator.results[key1] = val1
         translator.results[key2] = val2
@@ -59,41 +59,68 @@ class CachingTranslatorTest {
                 ticker,
             )
 
-        Assertions.assertEquals(val1.translation, caching.translate(key1.text, key1.source, key1.target).join())
+        Assertions.assertEquals(
+            val1.getOrThrow(),
+            caching.translateDetecting(key1.text, key1.source, key1.target).join(),
+        )
         Assertions.assertEquals(1, translator.successCount)
 
-        assertThrowsCompletable(RateLimitedException::class, caching.translate(key2.text, key2.source, key2.target))
+        assertThrowsCompletable(
+            RateLimitedException::class,
+            caching.translateDetecting(key2.text, key2.source, key2.target),
+        )
         Assertions.assertEquals(1, translator.failureCount)
 
         ticker += 1.seconds
 
-        Assertions.assertEquals(val1.translation, caching.translate(key1.text, key1.source, key1.target).join())
+        Assertions.assertEquals(
+            val1.getOrThrow(),
+            caching.translateDetecting(key1.text, key1.source, key1.target).join(),
+        )
         Assertions.assertEquals(1, translator.successCount)
 
-        assertThrowsCompletable(RateLimitedException::class, caching.translate(key2.text, key2.source, key2.target))
+        assertThrowsCompletable(
+            RateLimitedException::class,
+            caching.translateDetecting(key2.text, key2.source, key2.target),
+        )
         Assertions.assertEquals(1, translator.failureCount)
 
         ticker += 5.seconds
 
-        Assertions.assertEquals(val1.translation, caching.translate(key1.text, key1.source, key1.target).join())
+        Assertions.assertEquals(
+            val1.getOrThrow(),
+            caching.translateDetecting(key1.text, key1.source, key1.target).join(),
+        )
         Assertions.assertEquals(1, translator.successCount)
 
-        assertThrowsCompletable(RateLimitedException::class, caching.translate(key2.text, key2.source, key2.target))
+        assertThrowsCompletable(
+            RateLimitedException::class,
+            caching.translateDetecting(key2.text, key2.source, key2.target),
+        )
         Assertions.assertEquals(2, translator.failureCount)
 
         ticker += 4.minutes
 
-        Assertions.assertEquals(val1.translation, caching.translate(key1.text, key1.source, key1.target).join())
+        Assertions.assertEquals(
+            val1.getOrThrow(),
+            caching.translateDetecting(key1.text, key1.source, key1.target).join(),
+        )
         Assertions.assertEquals(1, translator.successCount)
 
         ticker += 2.minutes
 
-        Assertions.assertEquals(val1.translation, caching.translate(key1.text, key1.source, key1.target).join())
+        Assertions.assertEquals(
+            val1.getOrThrow(),
+            caching.translateDetecting(key1.text, key1.source, key1.target).join(),
+        )
         Assertions.assertEquals(1, translator.successCount)
 
         ticker += 6.minutes
 
-        Assertions.assertEquals(val1.translation, caching.translate(key1.text, key1.source, key1.target).join())
+        Assertions.assertEquals(
+            val1.getOrThrow(),
+            caching.translateDetecting(key1.text, key1.source, key1.target).join(),
+        )
         Assertions.assertEquals(2, translator.successCount)
     }
 

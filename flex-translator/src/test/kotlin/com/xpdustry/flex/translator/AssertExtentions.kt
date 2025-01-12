@@ -29,3 +29,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.function.ThrowingSupplier
 
 fun <T> assertDoesNotThrowsAndReturns(block: () -> T): T = Assertions.assertDoesNotThrow(ThrowingSupplier(block))
+
+fun translationSuccess(text: String) = Result.success(TranslatedText(text))
+
+fun translationFailure(throwable: Throwable) = Result.failure<TranslatedText>(throwable)

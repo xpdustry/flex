@@ -29,7 +29,7 @@ import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
 internal class TestTranslator : Translator {
-    val results = mutableMapOf<TranslationKey, TranslationResult>()
+    val results = mutableMapOf<TranslationKey, Result<TranslatedText>>()
 
     var successCount = 0
         private set
@@ -37,16 +37,19 @@ internal class TestTranslator : Translator {
     var failureCount = 0
         private set
 
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
     override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
-        when (val result = results[TranslationKey(text, source, target)]) {
-            is TranslationResult.Success -> {
+        translateDetecting(text, source, target).thenApply(TranslatedText::text)
+
+    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
+        results[TranslationKey(text, source, target)]?.fold(
+            {
                 successCount++
-                CompletableFuture.completedFuture(result.translation)
-            }
-            is TranslationResult.Failure -> {
+                CompletableFuture.completedFuture(it)
+            },
+            {
                 failureCount++
-                CompletableFuture.failedFuture(result.throwable)
-            }
-            null -> CompletableFuture.failedFuture(UnsupportedOperationException("No result for $text"))
-        }
+                CompletableFuture.failedFuture(it)
+            },
+        ) ?: CompletableFuture.failedFuture(UnsupportedOperationException("No result for $text"))
 }

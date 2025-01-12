@@ -46,11 +46,15 @@ constructor(private val endpoint: URI, executor: Executor, private val apiKey: S
     private val http = HttpClient.newBuilder().executor(executor).build()
     internal val languages: Map<String, Set<String>> = fetchSupportedLanguages()
 
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> {
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
+        translateDetecting(text, source, target).thenApply { it.text }
+
+    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
         if (source == Translator.ROUTER || target == Translator.ROUTER) {
-            return CompletableFuture.completedFuture("router")
+            return CompletableFuture.completedFuture(TranslatedText("router"))
         } else if (text.isBlank() || source.language == target.language) {
-            return CompletableFuture.completedFuture(text)
+            return CompletableFuture.completedFuture(TranslatedText(text, source))
         }
 
         val targets = languages[source.language]
@@ -81,7 +85,7 @@ constructor(private val endpoint: URI, executor: Executor, private val apiKey: S
                         "Failed to translate: ${json["error"]?.jsonPrimitive?.content} (code=${response.statusCode()})"
                     )
                 } else {
-                    json["translatedText"]!!.jsonPrimitive.content
+                    TranslatedText(json["translatedText"]!!.jsonPrimitive.content)
                 }
             }
     }

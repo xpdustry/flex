@@ -36,7 +36,11 @@ import org.slf4j.LoggerFactory
 internal class TranslatorProxy(config: TranslatorConfig.Backend) : Translator, FlexListener {
     @Volatile private var translator = createTranslator(config)
 
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
     override fun translate(text: String, source: Locale, target: Locale) = translator.translate(text, source, target)
+
+    override fun translateDetecting(text: String, source: Locale, target: Locale) =
+        translator.translateDetecting(text, source, target)
 
     override fun onFlexConfigReload(config: FlexConfig) {
         translator = createTranslator(config.translator.backend)

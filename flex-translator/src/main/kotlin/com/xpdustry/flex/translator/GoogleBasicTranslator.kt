@@ -42,11 +42,15 @@ public class GoogleBasicTranslator(private val apiKey: String, executor: Executo
     private val http = HttpClient.newBuilder().executor(executor).build()
     internal val supported: Set<Locale> = fetchSupportedLanguages()
 
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> {
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
+        translateDetecting(text, source, target).thenApply(TranslatedText::text)
+
+    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
         if (source == Translator.ROUTER || target == Translator.ROUTER) {
-            return CompletableFuture.completedFuture("router")
+            return CompletableFuture.completedFuture(TranslatedText("router"))
         } else if (text.isBlank() || source.language == target.language) {
-            return CompletableFuture.completedFuture(text)
+            return CompletableFuture.completedFuture(TranslatedText(text, source))
         }
 
         var fixedSource = source
@@ -79,15 +83,22 @@ public class GoogleBasicTranslator(private val apiKey: String, executor: Executo
                 if (response.statusCode() != 200) {
                     CompletableFuture.failedFuture(Exception("Failed to translate text: ${response.statusCode()}"))
                 } else {
-                    CompletableFuture.completedFuture(
+                    val result =
                         Json.parseToJsonElement(response.body())
                             .jsonObject["data"]!!
                             .jsonObject["translations"]!!
                             .jsonArray
                             .first()
-                            .jsonObject["translatedText"]!!
-                            .jsonPrimitive
-                            .content
+                            .jsonObject
+                    CompletableFuture.completedFuture(
+                        TranslatedText(
+                            result["translatedText"]!!.jsonPrimitive.content,
+                            if (fixedSource == Translator.AUTO_DETECT) {
+                                Locale.forLanguageTag(result["detectedSourceLanguage"]!!.jsonPrimitive.content)
+                            } else {
+                                fixedSource
+                            },
+                        )
                     )
                 }
             }

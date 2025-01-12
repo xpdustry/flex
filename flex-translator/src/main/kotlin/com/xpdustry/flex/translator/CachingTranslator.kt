@@ -66,51 +66,55 @@ internal constructor(
             .executor(executor)
             .buildAsync(TranslationLoader())
 
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
     override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
+        translateDetecting(text, source, target).thenApply(TranslatedText::text)
+
+    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
         cache
             .get(TranslationKey(text, Locale.forLanguageTag(source.language), Locale.forLanguageTag(target.language)))
-            .thenCompose {
-                when (it) {
-                    is TranslationResult.Success -> CompletableFuture.completedFuture(it.translation)
-                    is TranslationResult.Failure -> CompletableFuture.failedFuture(it.throwable)
-                }
+            .thenCompose { result ->
+                result.fold({ CompletableFuture.completedFuture(it) }, { CompletableFuture.failedFuture(it) })
             }
 
-    private inner class TranslationLoader : AsyncCacheLoader<TranslationKey, TranslationResult> {
-        override fun asyncLoad(key: TranslationKey, executor: Executor): CompletableFuture<TranslationResult> =
+    private inner class TranslationLoader : AsyncCacheLoader<TranslationKey, Result<TranslatedText>> {
+        override fun asyncLoad(key: TranslationKey, executor: Executor): CompletableFuture<Result<TranslatedText>> =
             translator
-                .translate(key.text, key.source, key.target)
-                .thenApply<TranslationResult>(TranslationResult::Success)
-                .exceptionally(TranslationResult::Failure)
+                .translateDetecting(key.text, key.source, key.target)
+                .thenApply<Result<TranslatedText>> { Result.success(it) }
+                .exceptionally { Result.failure(it) }
     }
 
-    private inner class TranslationExpiry : Expiry<TranslationKey, TranslationResult> {
-        override fun expireAfterCreate(key: TranslationKey, value: TranslationResult, currentTime: Long) =
-            when (value) {
-                is TranslationResult.Success -> successRetention.toNanos()
-                is TranslationResult.Failure -> failureRetention.toNanos()
+    private inner class TranslationExpiry : Expiry<TranslationKey, Result<TranslatedText>> {
+        override fun expireAfterCreate(key: TranslationKey, value: Result<TranslatedText>, currentTime: Long) =
+            when {
+                value.isSuccess -> successRetention.toNanos()
+                value.isFailure -> failureRetention.toNanos()
+                else -> error("Invalid result: $value")
             }
 
         override fun expireAfterUpdate(
             key: TranslationKey,
-            value: TranslationResult,
+            value: Result<TranslatedText>,
             currentTime: Long,
             currentDuration: Long,
         ) =
-            when (value) {
-                is TranslationResult.Success -> successRetention.toNanos()
-                is TranslationResult.Failure -> failureRetention.toNanos()
+            when {
+                value.isSuccess -> successRetention.toNanos()
+                value.isFailure -> failureRetention.toNanos()
+                else -> error("Invalid result: $value")
             }
 
         override fun expireAfterRead(
             key: TranslationKey,
-            value: TranslationResult,
+            value: Result<TranslatedText>,
             currentTime: Long,
             currentDuration: Long,
         ) =
-            when (value) {
-                is TranslationResult.Success -> successRetention.toNanos()
-                is TranslationResult.Failure -> currentDuration
+            when {
+                value.isSuccess -> successRetention.toNanos()
+                value.isFailure -> currentDuration
+                else -> error("Invalid result: $value")
             }
     }
 }
