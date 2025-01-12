@@ -38,13 +38,9 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 // TODO Add backoff and retries (in case of 429)
-public class GoogleBasicTranslator(private val apiKey: String, executor: Executor) : Translator {
+internal class GoogleBasicTranslator(private val apiKey: String, executor: Executor) : BaseTranslator() {
     private val http = HttpClient.newBuilder().executor(executor).build()
     internal val supported: Set<Locale> = fetchSupportedLanguages()
-
-    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
-        translateDetecting(text, source, target).thenApply(TranslatedText::text)
 
     override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
         if (source == Translator.ROUTER || target == Translator.ROUTER) {

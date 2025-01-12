@@ -38,7 +38,7 @@ class RollingTranslatorTest {
         val translator2 = TestTranslator()
         val val2 = translationSuccess("Bonjour")
         translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = val2
-        val rolling = RollingTranslator(listOf(translator1, translator2), NoopTranslator)
+        val rolling = RollingTranslator(listOf(translator1, translator2), Translator.noop())
 
         Assertions.assertEquals(
             val1.getOrThrow(),
@@ -71,7 +71,7 @@ class RollingTranslatorTest {
         val translator2 = TestTranslator()
         val val2 = translationSuccess("Bonjour")
         translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = val2
-        val rolling = RollingTranslator(listOf(translator1, translator2), NoopTranslator)
+        val rolling = RollingTranslator(listOf(translator1, translator2), Translator.noop())
 
         Assertions.assertEquals(
             val2.getOrThrow(),

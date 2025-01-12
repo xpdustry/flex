@@ -34,15 +34,11 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 
 // TODO When implementing custom retries and backoff, use raw deepl API
-public class DeepLTranslator(public val apiKey: String, private val executor: Executor) : Translator {
+internal class DeepLTranslator(apiKey: String, private val executor: Executor) : BaseTranslator() {
     private val translator = com.deepl.api.Translator(apiKey, TranslatorOptions().setAppInfo("Flex", "v1"))
 
     internal val sourceLanguages: List<Locale> = fetchLanguages(LanguageType.Source)
     internal val targetLanguages: List<Locale> = fetchLanguages(LanguageType.Target)
-
-    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
-        translateDetecting(text, source, target).thenApply(TranslatedText::text)
 
     override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
         if (text.isBlank()) {

@@ -34,24 +34,15 @@ import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 
-public class CachingTranslator
+internal class CachingTranslator
 internal constructor(
-    public val translator: Translator,
+    val translator: Translator,
     executor: Executor,
-    public val maximumSize: Int,
-    public val successRetention: Duration,
-    public val failureRetention: Duration,
+    maximumSize: Int,
+    private val successRetention: Duration,
+    private val failureRetention: Duration,
     ticker: Ticker = Ticker.systemTicker(),
-) : Translator {
-    @JvmOverloads
-    public constructor(
-        translator: Translator,
-        executor: Executor,
-        maximumSize: Int = 1000,
-        successRetention: Duration = Duration.ofMinutes(10),
-        failureRetention: Duration = Duration.ofSeconds(10),
-    ) : this(translator, executor, maximumSize, successRetention, failureRetention, Ticker.systemTicker())
-
+) : BaseTranslator() {
     init {
         require(maximumSize > 0) { "maximumSize must be positive" }
         require(successRetention >= Duration.ZERO) { "successRetention must be non-negative" }
@@ -65,10 +56,6 @@ internal constructor(
             .ticker(ticker)
             .executor(executor)
             .buildAsync(TranslationLoader())
-
-    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
-        translateDetecting(text, source, target).thenApply(TranslatedText::text)
 
     override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
         cache

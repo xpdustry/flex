@@ -28,8 +28,14 @@ package com.xpdustry.flex.translator
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
-public object NoopTranslator : Translator {
+internal abstract class BaseTranslator : Translator {
     @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
     override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
-        CompletableFuture.failedFuture(UnsupportedLanguageException(target))
+        translateDetecting(text, source, target).thenApply(TranslatedText::text)
+
+    abstract override fun translateDetecting(
+        text: String,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<TranslatedText>
 }

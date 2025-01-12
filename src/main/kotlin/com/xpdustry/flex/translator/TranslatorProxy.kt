@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory
 internal class TranslatorProxy(config: TranslatorConfig.Backend) : Translator, FlexListener {
     @Volatile private var translator = createTranslator(config)
 
-    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun translate(text: String, source: Locale, target: Locale) = translator.translate(text, source, target)
 
     override fun translateDetecting(text: String, source: Locale, target: Locale) =
@@ -50,15 +50,15 @@ internal class TranslatorProxy(config: TranslatorConfig.Backend) : Translator, F
     private fun createTranslator(config: TranslatorConfig.Backend): Translator {
         val executor = Dispatchers.IO.asExecutor()
         return when (config) {
-            is TranslatorConfig.Backend.None -> NoopTranslator
+            is TranslatorConfig.Backend.None -> Translator.noop()
             is TranslatorConfig.Backend.LibreTranslate ->
-                LibreTranslateTranslator(config.ltEndpoint, executor, config.ltApiKey?.value)
-            is TranslatorConfig.Backend.DeepL -> DeepLTranslator(config.deeplApiKey.value, executor)
-            is TranslatorConfig.Backend.GoogleBasic -> GoogleBasicTranslator(config.googleBasicApiKey.value, executor)
+                Translator.libreTranslate(config.ltEndpoint, executor, config.ltApiKey?.value)
+            is TranslatorConfig.Backend.DeepL -> Translator.deepl(config.deeplApiKey.value, executor)
+            is TranslatorConfig.Backend.GoogleBasic -> Translator.googleBasic(config.googleBasicApiKey.value, executor)
             is TranslatorConfig.Backend.Rolling ->
-                RollingTranslator(config.translators.map(::createTranslator), createTranslator(config.fallback))
+                Translator.rolling(config.translators.map(::createTranslator), createTranslator(config.fallback))
             is TranslatorConfig.Backend.Caching ->
-                CachingTranslator(
+                Translator.caching(
                     createTranslator(config.cachingTranslator),
                     executor,
                     config.maximumSize,

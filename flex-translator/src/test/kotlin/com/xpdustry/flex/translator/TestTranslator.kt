@@ -28,7 +28,7 @@ package com.xpdustry.flex.translator
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
-internal class TestTranslator : Translator {
+internal class TestTranslator : BaseTranslator() {
     val results = mutableMapOf<TranslationKey, Result<TranslatedText>>()
 
     var successCount = 0
@@ -36,10 +36,6 @@ internal class TestTranslator : Translator {
 
     var failureCount = 0
         private set
-
-    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
-        translateDetecting(text, source, target).thenApply(TranslatedText::text)
 
     override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
         results[TranslationKey(text, source, target)]?.fold(
