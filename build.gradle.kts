@@ -102,7 +102,7 @@ allprojects {
     }
 
     tasks.javadocJar {
-        from(tasks.dokkaHtml)
+        from(tasks.dokkaJavadoc)
     }
 }
 
