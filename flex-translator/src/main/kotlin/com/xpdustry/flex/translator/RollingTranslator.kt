@@ -33,27 +33,21 @@ internal class RollingTranslator(private val translators: List<Translator>, priv
     BaseTranslator() {
     private val cursor = AtomicInteger(0)
 
-    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
-        val cursor = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 }
-        return translate0(text, source, target, cursor, 0)
+    override fun translateDetecting(text: String, source: Locale, target: Locale) = roll {
+        it.translateDetecting(text, source, target)
     }
 
-    private fun translate0(
-        text: String,
-        source: Locale,
-        target: Locale,
-        cursor: Int,
-        index: Int,
-    ): CompletableFuture<TranslatedText> {
-        if (index >= translators.size) return fallback.translateDetecting(text, source, target)
-        val translator = translators[(cursor + index) % translators.size]
-        return translator.translateDetecting(text, source, target).exceptionallyCompose { throwable ->
-            logger.log(System.Logger.Level.DEBUG, "Translator {0} failed", translator.javaClass.simpleName, throwable)
-            translate0(text, source, target, cursor, index + 1)
-        }
+    override fun translateDetecting(texts: List<String>, source: Locale, target: Locale) = roll {
+        it.translateDetecting(texts, source, target)
     }
 
-    private companion object {
-        @JvmStatic private val logger = System.getLogger(RollingTranslator::class.java.name)
+    private fun <T : Any> roll(
+        idx: Int = 0,
+        cur: Int = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 },
+        function: (Translator) -> CompletableFuture<T>,
+    ): CompletableFuture<T> {
+        if (idx >= translators.size) return function(fallback)
+        val translator = translators[(cur + idx) % translators.size]
+        return function(translator).exceptionallyCompose { roll(cur, idx + 1, function) }
     }
 }

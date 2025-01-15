@@ -46,6 +46,17 @@ constructor(private val endpoint: URI, executor: Executor, private val apiKey: S
     private val http = HttpClient.newBuilder().executor(executor).build()
     internal val languages: Map<String, Set<String>> = fetchSupportedLanguages()
 
+    override fun translateDetecting(
+        texts: List<String>,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<List<TranslatedText>> {
+        val futures = texts.map { text -> translateDetecting(text, source, target) }
+        return CompletableFuture.allOf(*futures.toTypedArray()).thenApply {
+            futures.map(CompletableFuture<TranslatedText>::join)
+        }
+    }
+
     override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
         if (source == Translator.ROUTER || target == Translator.ROUTER) {
             return CompletableFuture.completedFuture(TranslatedText("router"))

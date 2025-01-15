@@ -45,6 +45,10 @@ class DeepLTranslatorTest {
             val result = translator.translateDetecting("Bonjour", Translator.AUTO_DETECT, Locale.ENGLISH).join()
             Assertions.assertEquals(Locale.FRENCH.language, result.detected?.language)
         }
+        Assertions.assertDoesNotThrow {
+            val result = translator.translateDetecting(listOf("Bonjour", "Salut"), Locale.FRENCH, Locale.ENGLISH).join()
+            Assertions.assertEquals(2, result.size)
+        }
     }
 
     companion object {

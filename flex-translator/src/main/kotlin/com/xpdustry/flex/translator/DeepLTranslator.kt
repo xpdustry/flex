@@ -40,11 +40,14 @@ internal class DeepLTranslator(apiKey: String, private val executor: Executor) :
     internal val sourceLanguages: List<Locale> = fetchLanguages(LanguageType.Source)
     internal val targetLanguages: List<Locale> = fetchLanguages(LanguageType.Target)
 
-    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
-        if (text.isBlank()) {
-            return CompletableFuture.completedFuture(TranslatedText(text))
-        } else if (source == Translator.ROUTER || target == Translator.ROUTER) {
-            return CompletableFuture.completedFuture(TranslatedText("router"))
+    override fun translateDetecting(
+        texts: List<String>,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<List<TranslatedText>> {
+        if (source == Translator.ROUTER || target == Translator.ROUTER) {
+            val result = TranslatedText("router")
+            return CompletableFuture.completedFuture(List(texts.size) { result })
         }
 
         val sourceLocale =
@@ -60,7 +63,7 @@ internal class DeepLTranslator(apiKey: String, private val executor: Executor) :
                 ?: return CompletableFuture.failedFuture(UnsupportedLanguageException(target))
 
         if (sourceLocale?.language == targetLocale.language) {
-            return CompletableFuture.completedFuture(TranslatedText(text, sourceLocale))
+            return CompletableFuture.completedFuture(List(texts.size) { i -> TranslatedText(texts[i], sourceLocale) })
         }
 
         return CompletableFuture.runAsync(
@@ -72,14 +75,14 @@ internal class DeepLTranslator(apiKey: String, private val executor: Executor) :
                 executor,
             )
             .thenApply {
-                val result =
-                    translator.translateText(
-                        text,
-                        sourceLocale?.language,
-                        targetLocale.toLanguageTag(),
-                        DEFAULT_OPTIONS,
-                    )
-                TranslatedText(result.text, sourceLocale ?: Locale.forLanguageTag(result.detectedSourceLanguage))
+                translator
+                    .translateText(texts, sourceLocale?.language, targetLocale.toLanguageTag(), DEFAULT_OPTIONS)
+                    .map { result ->
+                        TranslatedText(
+                            result.text,
+                            sourceLocale ?: Locale.forLanguageTag(result.detectedSourceLanguage),
+                        )
+                    }
             }
     }
 

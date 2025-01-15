@@ -48,4 +48,26 @@ internal class TestTranslator : BaseTranslator() {
                 CompletableFuture.failedFuture(it)
             },
         ) ?: CompletableFuture.failedFuture(UnsupportedOperationException("No result for $text"))
+
+    override fun translateDetecting(
+        texts: List<String>,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<List<TranslatedText>> {
+        val values =
+            texts.map { text ->
+                results[TranslationKey(text, source, target)]
+                    ?: run {
+                        failureCount++
+                        return CompletableFuture.failedFuture(UnsupportedOperationException("No result for $text"))
+                    }
+            }
+        return CompletableFuture.completedFuture(
+                values.map { translated ->
+                    if (translated.isFailure) return CompletableFuture.failedFuture(translated.exceptionOrNull()!!)
+                    translated.getOrNull()!!
+                }
+            )
+            .whenComplete { _, throwable -> if (throwable == null) successCount++ }
+    }
 }

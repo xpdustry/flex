@@ -124,6 +124,41 @@ class CachingTranslatorTest {
         Assertions.assertEquals(2, translator.successCount)
     }
 
+    @Test
+    fun `test multiple`() {
+        val translator = TestTranslator()
+
+        val key1 = TranslationKey("hello", Locale.ENGLISH, Locale.FRENCH)
+        val val1 = translationSuccess("bonjour")
+        val key2 = TranslationKey("hi", Locale.ENGLISH, Locale.FRENCH)
+        val val2 = translationSuccess("salut")
+        val key3 = TranslationKey("weird", Locale.ENGLISH, Locale.FRENCH)
+        val val3 = translationSuccess("bizarre")
+
+        translator.results[key1] = val1
+        translator.results[key2] = val2
+        translator.results[key3] = val3
+
+        val ticker = NavigableTicker()
+        val caching =
+            CachingTranslator(
+                translator,
+                Runnable::run,
+                1000,
+                5.minutes.toJavaDuration(),
+                5.seconds.toJavaDuration(),
+                ticker,
+            )
+
+        Assertions.assertEquals(
+            listOf(val1.getOrThrow(), val2.getOrThrow(), val3.getOrThrow()),
+            caching.translateDetecting(listOf(key1.text, key2.text, key3.text), key1.source, key1.target).join(),
+        )
+
+        Assertions.assertEquals(1, translator.successCount)
+        Assertions.assertEquals(0, translator.failureCount)
+    }
+
     private fun assertThrowsCompletable(exception: KClass<out Throwable>, future: CompletableFuture<*>) {
         try {
             future.join()

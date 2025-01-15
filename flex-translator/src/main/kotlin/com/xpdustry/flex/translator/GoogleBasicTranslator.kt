@@ -33,6 +33,8 @@ import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -42,11 +44,14 @@ internal class GoogleBasicTranslator(private val apiKey: String, executor: Execu
     private val http = HttpClient.newBuilder().executor(executor).build()
     internal val supported: Set<Locale> = fetchSupportedLanguages()
 
-    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> {
+    override fun translateDetecting(
+        texts: List<String>,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<List<TranslatedText>> {
         if (source == Translator.ROUTER || target == Translator.ROUTER) {
-            return CompletableFuture.completedFuture(TranslatedText("router"))
-        } else if (text.isBlank() || source.language == target.language) {
-            return CompletableFuture.completedFuture(TranslatedText(text, source))
+            val result = TranslatedText("router")
+            return CompletableFuture.completedFuture(List(texts.size) { result })
         }
 
         var fixedSource = source
@@ -63,8 +68,17 @@ internal class GoogleBasicTranslator(private val apiKey: String, executor: Execu
             }
         }
 
+        if (fixedSource.language == fixedTarget.language) {
+            return CompletableFuture.completedFuture(List(texts.size) { i -> TranslatedText(texts[i], fixedSource) })
+        }
+
         val parameters =
-            mutableMapOf("key" to apiKey, "q" to text, "target" to fixedTarget.toLanguageTag(), "format" to "text")
+            mutableMapOf(
+                "key" to apiKey,
+                "q" to JsonArray(texts.map(::JsonPrimitive)).toString(),
+                "target" to fixedTarget.toLanguageTag(),
+                "format" to "text",
+            )
 
         if (fixedSource != Translator.AUTO_DETECT) {
             parameters["source"] = fixedSource.toLanguageTag()
@@ -79,22 +93,22 @@ internal class GoogleBasicTranslator(private val apiKey: String, executor: Execu
                 if (response.statusCode() != 200) {
                     CompletableFuture.failedFuture(Exception("Failed to translate text: ${response.statusCode()}"))
                 } else {
-                    val result =
+                    CompletableFuture.completedFuture(
                         Json.parseToJsonElement(response.body())
                             .jsonObject["data"]!!
                             .jsonObject["translations"]!!
                             .jsonArray
-                            .first()
-                            .jsonObject
-                    CompletableFuture.completedFuture(
-                        TranslatedText(
-                            result["translatedText"]!!.jsonPrimitive.content,
-                            if (fixedSource == Translator.AUTO_DETECT) {
-                                Locale.forLanguageTag(result["detectedSourceLanguage"]!!.jsonPrimitive.content)
-                            } else {
-                                fixedSource
-                            },
-                        )
+                            .map { element ->
+                                val obj = element.jsonObject
+                                TranslatedText(
+                                    obj["translatedText"]!!.jsonPrimitive.content,
+                                    if (fixedSource == Translator.AUTO_DETECT) {
+                                        Locale.forLanguageTag(obj["detectedSourceLanguage"]!!.jsonPrimitive.content)
+                                    } else {
+                                        fixedSource
+                                    },
+                                )
+                            }
                     )
                 }
             }

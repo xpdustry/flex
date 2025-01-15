@@ -39,6 +39,17 @@ public interface Translator {
     public fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
         translate(text, source, target).thenApply { TranslatedText(it, target) }
 
+    public fun translateDetecting(
+        texts: List<String>,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<List<TranslatedText>> {
+        val futures = texts.map { translateDetecting(it, source, target) }
+        return CompletableFuture.allOf(*futures.toTypedArray()).thenApply { _ ->
+            futures.map { future -> future.join() }
+        }
+    }
+
     @Deprecated("Deprecated", ReplaceWith("Translator.noop()"))
     public object None : Translator {
         @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))

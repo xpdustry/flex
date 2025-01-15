@@ -64,12 +64,56 @@ internal constructor(
                 result.fold({ CompletableFuture.completedFuture(it) }, { CompletableFuture.failedFuture(it) })
             }
 
+    override fun translateDetecting(
+        texts: List<String>,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<List<TranslatedText>> {
+        val sourceLanguage = Locale.forLanguageTag(source.language)
+        val targetLanguage = Locale.forLanguageTag(target.language)
+        val keys = texts.map { TranslationKey(it, sourceLanguage, targetLanguage) }
+        return cache.getAll(keys).thenCompose { map ->
+            val list = ArrayList<TranslatedText>(keys.size)
+            for (i in keys.indices) {
+                val result =
+                    map[keys[i]]
+                        ?: return@thenCompose CompletableFuture.failedFuture(
+                            NullPointerException(
+                                "Missing key ${keys[i]} in results for text $texts translating from $source to $target"
+                            )
+                        )
+                list.add(
+                    result.getOrNull() ?: return@thenCompose CompletableFuture.failedFuture(result.exceptionOrNull()!!)
+                )
+            }
+            CompletableFuture.completedFuture(list)
+        }
+    }
+
     private inner class TranslationLoader : AsyncCacheLoader<TranslationKey, Result<TranslatedText>> {
         override fun asyncLoad(key: TranslationKey, executor: Executor): CompletableFuture<Result<TranslatedText>> =
             translator
                 .translateDetecting(key.text, key.source, key.target)
                 .thenApply<Result<TranslatedText>> { Result.success(it) }
                 .exceptionally { Result.failure(it) }
+
+        override fun asyncLoadAll(
+            keys: Set<TranslationKey>,
+            executor: Executor,
+        ): CompletableFuture<out Map<TranslationKey, Result<TranslatedText>>> {
+            val groups =
+                keys
+                    .groupBy { it.source to it.target }
+                    .map { (pair, keys) ->
+                        val (source, target) = pair
+                        translator.translateDetecting(keys.map(TranslationKey::text), source, target).thenApply {
+                            it.mapIndexed { i, t -> keys[i] to Result.success(t) }
+                        }
+                    }
+            return CompletableFuture.allOf(*groups.toTypedArray()).thenApply { _ ->
+                groups.map { it.join() }.flatten().toMap()
+            }
+        }
     }
 
     private inner class TranslationExpiry : Expiry<TranslationKey, Result<TranslatedText>> {

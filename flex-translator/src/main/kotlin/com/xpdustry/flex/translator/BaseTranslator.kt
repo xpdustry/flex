@@ -33,9 +33,12 @@ internal abstract class BaseTranslator : Translator {
     override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
         translateDetecting(text, source, target).thenApply(TranslatedText::text)
 
+    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
+        translateDetecting(listOf(text), source, target).thenApply(List<TranslatedText>::first)
+
     abstract override fun translateDetecting(
-        text: String,
+        texts: List<String>,
         source: Locale,
         target: Locale,
-    ): CompletableFuture<TranslatedText>
+    ): CompletableFuture<List<TranslatedText>>
 }
