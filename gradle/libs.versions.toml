@@ -19,7 +19,7 @@ slf4md = "1.0.1"
 slf4j = "2.0.16"
 distributor = "4.1.0"
 hoplite = "2.9.0"
-deepl = "1.7.0"
+deepl = "1.8.0"
 caffeine = "3.1.8"
 
 # testing
