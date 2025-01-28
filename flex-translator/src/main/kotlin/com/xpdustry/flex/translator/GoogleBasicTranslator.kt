@@ -77,7 +77,6 @@ internal class GoogleBasicTranslator(private val apiKey: String, executor: Execu
         }
 
         val json = buildJsonObject {
-            put("key", apiKey)
             putJsonArray("q") { addAll(texts) }
             put("target", fixedTarget.toLanguageTag())
             put("format", "text")
@@ -88,7 +87,7 @@ internal class GoogleBasicTranslator(private val apiKey: String, executor: Execu
 
         return http
             .sendAsync(
-                HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT))
+                HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT, mapOf("key" to apiKey)))
                     .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
                     .build(),
                 HttpResponse.BodyHandlers.ofString(),
