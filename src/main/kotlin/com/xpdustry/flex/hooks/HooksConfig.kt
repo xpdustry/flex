@@ -25,7 +25,6 @@
  */
 package com.xpdustry.flex.hooks
 
-import com.sksamuel.hoplite.ConfigAlias
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -37,10 +36,14 @@ internal data class HooksConfig(
 ) {
     data class Name(
         val enabled: Boolean = true,
-        @ConfigAlias("update-interval") val interval: Duration = 500.milliseconds,
+        val maximumNameSize: Int = 512,
+        val updateInterval: Duration = 500.milliseconds,
     ) {
         init {
-            require(interval > Duration.ZERO) { "Interval duration must be greater than 0" }
+            require(maximumNameSize >= 1) { "Maximum name size is lower than 1, got $maximumNameSize" }
+            require(updateInterval > Duration.ZERO) {
+                "Update interval duration must be greater than 0, got $updateInterval"
+            }
         }
     }
 }

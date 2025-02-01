@@ -27,8 +27,9 @@ package com.xpdustry.flex.hooks
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.distributor.api.plugin.PluginListener
-import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
+import com.xpdustry.distributor.api.scheduler.PluginTask
+import com.xpdustry.flex.FlexConfig
+import com.xpdustry.flex.FlexListener
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.placeholder.PlaceholderPipeline
 import com.xpdustry.flex.placeholder.template.TemplateManager
@@ -40,18 +41,19 @@ import org.slf4j.LoggerFactory
 internal class PlayerNameHook(
     private val placeholders: PlaceholderPipeline,
     private val plugin: MindustryPlugin,
-    private val config: HooksConfig,
-) : PluginListener {
+    config: HooksConfig,
+) : FlexListener {
+    private var config = config.name
+    private var task: PluginTask<Void>? = null
+
     override fun onPluginInit() {
-        if (config.name.enabled) {
-            Distributor.get()
-                .pluginScheduler
-                .schedule(plugin)
-                .async(false)
-                .delay(1, MindustryTimeUnit.SECONDS)
-                .repeat(config.name.interval.toJavaDuration())
-                .execute(this::onNameUpdate)
-        }
+        reschedule()
+    }
+
+    override fun onFlexConfigReload(config: FlexConfig) {
+        this.config = config.hooks.name
+        reschedule()
+        logger.info("Reloaded player name hook.")
     }
 
     private fun onNameUpdate() {
@@ -65,7 +67,7 @@ internal class PlayerNameHook(
                             "%template:${TemplateManager.NAME_TEMPLATE_NAME}%",
                         )
                     )
-                if (result.length > 256) {
+                if (result.length > config.maximumNameSize) {
                     logger.warn("Possible name overflow for player {} ({}), resetting.", player.name(), player.uuid())
                     player.name(player.info.lastName)
                 } else if (result.isNotBlank()) {
@@ -76,6 +78,20 @@ internal class PlayerNameHook(
             } catch (e: Exception) {
                 logger.error("Error while updating player name of {} ({})", player.name(), player.uuid(), e)
             }
+        }
+    }
+
+    private fun reschedule() {
+        task?.cancel()
+        if (config.enabled) {
+            task =
+                Distributor.get()
+                    .pluginScheduler
+                    .schedule(plugin)
+                    .async(false)
+                    .delay(config.updateInterval.toJavaDuration())
+                    .repeat(config.updateInterval.toJavaDuration())
+                    .execute(this::onNameUpdate)
         }
     }
 
