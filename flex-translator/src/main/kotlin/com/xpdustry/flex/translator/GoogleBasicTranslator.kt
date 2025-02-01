@@ -32,18 +32,22 @@ import java.net.http.HttpResponse
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.addAll
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 
 // TODO Add backoff and retries (in case of 429)
 internal class GoogleBasicTranslator(private val apiKey: String, executor: Executor) : BaseTranslator() {
     private val http = HttpClient.newBuilder().executor(executor).build()
     internal val supported: Set<Locale> = fetchSupportedLanguages()
 
+    @OptIn(ExperimentalSerializationApi::class)
     override fun translateDetecting(
         texts: List<String>,
         source: Locale,
@@ -72,21 +76,20 @@ internal class GoogleBasicTranslator(private val apiKey: String, executor: Execu
             return CompletableFuture.completedFuture(List(texts.size) { i -> TranslatedText(texts[i], fixedSource) })
         }
 
-        val parameters =
-            mutableMapOf(
-                "key" to apiKey,
-                "q" to JsonArray(texts.map(::JsonPrimitive)).toString(),
-                "target" to fixedTarget.toLanguageTag(),
-                "format" to "text",
-            )
-
-        if (fixedSource != Translator.AUTO_DETECT) {
-            parameters["source"] = fixedSource.toLanguageTag()
+        val json = buildJsonObject {
+            putJsonArray("q") { addAll(texts) }
+            put("target", fixedTarget.toLanguageTag())
+            put("format", "text")
+            if (fixedSource != Translator.AUTO_DETECT) {
+                put("source", fixedSource.toLanguageTag())
+            }
         }
 
         return http
             .sendAsync(
-                HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT, parameters)).GET().build(),
+                HttpRequest.newBuilder(createApiUri(TRANSLATION_V2_ENDPOINT, mapOf("key" to apiKey)))
+                    .POST(HttpRequest.BodyPublishers.ofString(json.toString()))
+                    .build(),
                 HttpResponse.BodyHandlers.ofString(),
             )
             .thenCompose { response ->

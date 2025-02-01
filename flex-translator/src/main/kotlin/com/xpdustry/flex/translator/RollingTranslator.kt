@@ -48,6 +48,6 @@ internal class RollingTranslator(private val translators: List<Translator>, priv
     ): CompletableFuture<T> {
         if (idx >= translators.size) return function(fallback)
         val translator = translators[(cur + idx) % translators.size]
-        return function(translator).exceptionallyCompose { roll(cur, idx + 1, function) }
+        return function(translator).exceptionallyCompose { roll(idx + 1, cur, function) }
     }
 }

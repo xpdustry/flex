@@ -180,6 +180,7 @@ tasks.shadowJar {
 
 tasks.register<Copy>("release") {
     dependsOn(tasks.build)
+    dependsOn(project(":flex-translator").tasks.build)
     from(tasks.shadowJar)
     destinationDir = temporaryDir
 }
