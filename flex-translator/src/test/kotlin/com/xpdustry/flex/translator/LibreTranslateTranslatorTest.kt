@@ -25,32 +25,31 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.flex.FlexScope
+import java.net.URI
 import java.util.Locale
-import java.util.concurrent.atomic.AtomicInteger
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.future.future
-import org.slf4j.LoggerFactory
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 
-internal class RollingTranslator(private val translators: List<Translator>, private val fallback: Translator) :
-    Translator {
-    private val cursor = AtomicInteger(0)
-
-    override fun translate(text: String, source: Locale, target: Locale) =
-        FlexScope.future {
-            val cursor = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 }
-            for (i in translators.indices) {
-                val translator = translators[(cursor + i) % translators.size]
-                try {
-                    return@future translator.translate(text, source, target).await()
-                } catch (e: Exception) {
-                    logger.debug("Translator {} failed", translator.javaClass.simpleName, e)
-                }
-            }
-            return@future fallback.translate(text, source, target).await()
+class LibreTranslateTranslatorTest {
+    @EnabledIfEnvironmentVariable(named = ENDPOINT_ENV, matches = ".+")
+    @EnabledIfEnvironmentVariable(named = API_KEY_ENV, matches = ".+")
+    @Test
+    fun test() {
+        val translator = assertDoesNotThrowsAndReturns {
+            LibreTranslateTranslator(URI(System.getenv(ENDPOINT_ENV)), Runnable::run, System.getenv(API_KEY_ENV))
         }
+        Assertions.assertTrue(translator.languages.isNotEmpty())
+        Assertions.assertTrue(translator.languages.values.flatten().isNotEmpty())
+        Assertions.assertDoesNotThrow { translator.translateDetecting("Bonjour", Locale.FRENCH, Locale.ENGLISH).join() }
+        Assertions.assertDoesNotThrow {
+            val result = translator.translateDetecting(listOf("Bonjour", "Salut"), Locale.FRENCH, Locale.ENGLISH).join()
+            Assertions.assertEquals(2, result.size)
+        }
+    }
 
     companion object {
-        private val logger = LoggerFactory.getLogger(RollingTranslator::class.java)
+        private const val ENDPOINT_ENV = "FLEX_TEST_TRANSLATOR_LT_ENDPOINT"
+        private const val API_KEY_ENV = "FLEX_TEST_TRANSLATOR_LT_API_KEY"
     }
 }

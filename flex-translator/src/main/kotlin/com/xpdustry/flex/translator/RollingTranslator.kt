@@ -23,9 +23,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.xpdustry.flex.util
+package com.xpdustry.flex.translator
 
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.function.ThrowingSupplier
+import java.util.Locale
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 
-fun <T> assertDoesNotThrowsAndReturns(block: () -> T): T = Assertions.assertDoesNotThrow(ThrowingSupplier(block))
+internal class RollingTranslator(private val translators: List<Translator>, private val fallback: Translator) :
+    BaseTranslator() {
+    private val cursor = AtomicInteger(0)
+
+    override fun translateDetecting(text: String, source: Locale, target: Locale) = roll {
+        it.translateDetecting(text, source, target)
+    }
+
+    override fun translateDetecting(texts: List<String>, source: Locale, target: Locale) = roll {
+        it.translateDetecting(texts, source, target)
+    }
+
+    private fun <T : Any> roll(
+        idx: Int = 0,
+        cur: Int = cursor.getAndUpdate { if (it + 1 < translators.size) it + 1 else 0 },
+        function: (Translator) -> CompletableFuture<T>,
+    ): CompletableFuture<T> {
+        if (idx >= translators.size) return function(fallback)
+        val translator = translators[(cur + idx) % translators.size]
+        return function(translator).exceptionallyCompose { roll(idx + 1, cur, function) }
+    }
+}

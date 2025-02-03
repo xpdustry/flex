@@ -28,8 +28,8 @@ package com.xpdustry.flex.translator
 import java.util.Locale
 import java.util.concurrent.CompletableFuture
 
-internal class TestTranslator : Translator {
-    val results = mutableMapOf<TranslationKey, TranslationResult>()
+internal class TestTranslator : BaseTranslator() {
+    val results = mutableMapOf<TranslationKey, Result<TranslatedText>>()
 
     var successCount = 0
         private set
@@ -37,16 +37,37 @@ internal class TestTranslator : Translator {
     var failureCount = 0
         private set
 
-    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
-        when (val result = results[TranslationKey(text, source, target)]) {
-            is TranslationResult.Success -> {
+    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
+        results[TranslationKey(text, source, target)]?.fold(
+            {
                 successCount++
-                CompletableFuture.completedFuture(result.translation)
-            }
-            is TranslationResult.Failure -> {
+                CompletableFuture.completedFuture(it)
+            },
+            {
                 failureCount++
-                CompletableFuture.failedFuture(result.throwable)
+                CompletableFuture.failedFuture(it)
+            },
+        ) ?: CompletableFuture.failedFuture(UnsupportedOperationException("No result for $text"))
+
+    override fun translateDetecting(
+        texts: List<String>,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<List<TranslatedText>> {
+        val values =
+            texts.map { text ->
+                results[TranslationKey(text, source, target)]
+                    ?: run {
+                        failureCount++
+                        return CompletableFuture.failedFuture(UnsupportedOperationException("No result for $text"))
+                    }
             }
-            null -> CompletableFuture.failedFuture(UnsupportedOperationException("No result for $text"))
-        }
+        return CompletableFuture.completedFuture(
+                values.map { translated ->
+                    if (translated.isFailure) return CompletableFuture.failedFuture(translated.exceptionOrNull()!!)
+                    translated.getOrNull()!!
+                }
+            )
+            .whenComplete { _, throwable -> if (throwable == null) successCount++ }
+    }
 }

@@ -25,23 +25,6 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.flex.util.assertDoesNotThrowsAndReturns
 import java.util.Locale
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 
-class DeepLTranslatorTest {
-    @EnabledIfEnvironmentVariable(named = API_KEY_ENV, matches = ".+")
-    @Test
-    fun test() {
-        val translator = assertDoesNotThrowsAndReturns { DeepLTranslator(System.getenv(API_KEY_ENV), "v0") }
-        Assertions.assertTrue(translator.sourceLanguages.isNotEmpty())
-        Assertions.assertTrue(translator.targetLanguages.isNotEmpty())
-        Assertions.assertDoesNotThrow { translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join() }
-    }
-
-    companion object {
-        private const val API_KEY_ENV = "FLEX_TEST_TRANSLATOR_DEEPL_API_KEY"
-    }
-}
+public data class TranslatedText @JvmOverloads constructor(val text: String, val detected: Locale? = null)

@@ -25,8 +25,20 @@
  */
 package com.xpdustry.flex.translator
 
-internal sealed interface TranslationResult {
-    data class Success(val translation: String) : TranslationResult
+import java.util.Locale
+import java.util.concurrent.CompletableFuture
 
-    data class Failure(val throwable: Throwable) : TranslationResult
+internal abstract class BaseTranslator : Translator {
+    @Deprecated("Deprecated", ReplaceWith("translateDetecting(text, source, target)"))
+    override fun translate(text: String, source: Locale, target: Locale): CompletableFuture<String> =
+        translateDetecting(text, source, target).thenApply(TranslatedText::text)
+
+    override fun translateDetecting(text: String, source: Locale, target: Locale): CompletableFuture<TranslatedText> =
+        translateDetecting(listOf(text), source, target).thenApply(List<TranslatedText>::first)
+
+    abstract override fun translateDetecting(
+        texts: List<String>,
+        source: Locale,
+        target: Locale,
+    ): CompletableFuture<List<TranslatedText>>
 }

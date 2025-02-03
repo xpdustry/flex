@@ -23,10 +23,88 @@ plugins {
 
 val metadata = ModMetadata.fromJson(rootProject.file("plugin.json"))
 if (indraGit.headTag() == null) metadata.version += "-SNAPSHOT"
-group = "com.xpdustry"
-val rootPackage = "com.xpdustry.flex"
-version = metadata.version
-description = metadata.description
+
+allprojects {
+    group = "com.xpdustry"
+    version = metadata.version
+    description = metadata.description
+
+    val libs = rootProject.libs
+
+    apply(plugin = libs.plugins.kotlin.jvm.get().pluginId)
+    apply(plugin = libs.plugins.spotless.get().pluginId)
+    apply(plugin = libs.plugins.indra.common.get().pluginId)
+    apply(plugin = libs.plugins.indra.git.get().pluginId)
+    apply(plugin = libs.plugins.indra.publishing.get().pluginId)
+    apply(plugin = libs.plugins.dokka.get().pluginId)
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        testImplementation(libs.junit.api)
+        testImplementation(libs.junit.params)
+        testRuntimeOnly(libs.junit.engine)
+        testRuntimeOnly(libs.slf4j.simple)
+    }
+
+    signing {
+        val signingKey: String? by project
+        val signingPassword: String? by project
+        useInMemoryPgpKeys(signingKey, signingPassword)
+    }
+
+    indra {
+        javaVersions {
+            target(17)
+            minimumToolchain(17)
+        }
+
+        publishSnapshotsTo("xpdustry", "https://maven.xpdustry.com/snapshots")
+        publishReleasesTo("xpdustry", "https://maven.xpdustry.com/releases")
+
+        mitLicense()
+
+        github("xpdustry", "flex") {
+            ci(true)
+            issues(true)
+            scm(true)
+        }
+
+        configurePublications {
+            pom {
+                organization {
+                    name = "xpdustry"
+                    url = "https://www.xpdustry.com"
+                }
+            }
+        }
+    }
+
+    spotless {
+        kotlin {
+            ktfmt().kotlinlangStyle().configure { it.setMaxWidth(120) }
+            licenseHeaderFile(rootProject.file("HEADER.txt"))
+        }
+        kotlinGradle {
+            ktlint().editorConfigOverride(mapOf("max_line_length" to "120"))
+        }
+    }
+
+    kotlin {
+        jvmToolchain(17)
+        explicitApi()
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_17
+            apiVersion = KotlinVersion.KOTLIN_2_1
+        }
+    }
+
+    tasks.javadocJar {
+        from(tasks.dokkaJavadoc)
+    }
+}
 
 toxopid {
     compileVersion = "v${metadata.minGameVersion}"
@@ -34,19 +112,16 @@ toxopid {
 }
 
 repositories {
-    mavenCentral()
     anukeXpdustry()
     maven("https://maven.xpdustry.com/releases") {
         name = "xpdustry-releases"
         mavenContent { releasesOnly() }
     }
-    maven("https://maven.xpdustry.com/snapshots") {
-        name = "xpdustry-snapshots"
-        mavenContent { snapshotsOnly() }
-    }
 }
 
 dependencies {
+    api(project(":flex-translator"))
+
     compileOnly(libs.kotlinx.coroutines.core)
     testImplementation(libs.kotlinx.coroutines.core)
     compileOnly(libs.kotlinx.coroutines.jdk8)
@@ -66,69 +141,10 @@ dependencies {
     implementation(libs.deepl) {
         exclude("org.jetbrains", "annotations")
     }
+
     implementation(libs.caffeine) {
         exclude("org.checkerframework", "checker-qual")
         exclude("com.google.errorprone", "error_prone_annotations")
-    }
-
-    testImplementation(libs.junit.api)
-    testImplementation(libs.junit.params)
-    testRuntimeOnly(libs.junit.engine)
-    testRuntimeOnly(libs.slf4j.simple)
-}
-
-signing {
-    val signingKey: String? by project
-    val signingPassword: String? by project
-    useInMemoryPgpKeys(signingKey, signingPassword)
-}
-
-indra {
-    javaVersions {
-        target(17)
-        minimumToolchain(17)
-    }
-
-    publishSnapshotsTo("xpdustry", "https://maven.xpdustry.com/snapshots")
-    publishReleasesTo("xpdustry", "https://maven.xpdustry.com/releases")
-
-    mitLicense()
-
-    if (metadata.repository.isNotBlank()) {
-        val repo = metadata.repository.split("/")
-        github(repo[0], repo[1]) {
-            ci(true)
-            issues(true)
-            scm(true)
-        }
-    }
-
-    configurePublications {
-        pom {
-            organization {
-                name = "xpdustry"
-                url = "https://www.xpdustry.com"
-            }
-        }
-    }
-}
-
-spotless {
-    kotlin {
-        ktfmt().kotlinlangStyle().configure { it.setMaxWidth(120) }
-        licenseHeaderFile(rootProject.file("HEADER.txt"))
-    }
-    kotlinGradle {
-        ktlint().editorConfigOverride(mapOf("max_line_length" to "120"))
-    }
-}
-
-kotlin {
-    jvmToolchain(17)
-    explicitApi()
-    compilerOptions {
-        jvmTarget = JvmTarget.JVM_17
-        apiVersion = KotlinVersion.KOTLIN_2_1
     }
 }
 
@@ -162,12 +178,9 @@ tasks.shadowJar {
     }
 }
 
-tasks.javadocJar {
-    from(tasks.dokkaHtml)
-}
-
 tasks.register<Copy>("release") {
     dependsOn(tasks.build)
+    dependsOn(project(":flex-translator").tasks.build)
     from(tasks.shadowJar)
     destinationDir = temporaryDir
 }

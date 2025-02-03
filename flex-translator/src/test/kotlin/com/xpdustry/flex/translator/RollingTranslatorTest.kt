@@ -33,16 +33,29 @@ class RollingTranslatorTest {
     @Test
     fun `test rolling`() {
         val translator1 = TestTranslator()
-        translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Success("Salut")
+        val val1 = translationSuccess("Salut")
+        translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = val1
         val translator2 = TestTranslator()
-        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
-            TranslationResult.Success("Bonjour")
-        val rolling = RollingTranslator(listOf(translator1, translator2), Translator.None)
+        val val2 = translationSuccess("Bonjour")
+        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = val2
+        val rolling = RollingTranslator(listOf(translator1, translator2), Translator.noop())
 
-        Assertions.assertEquals("Salut", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
-        Assertions.assertEquals("Bonjour", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
-        Assertions.assertEquals("Salut", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
-        Assertions.assertEquals("Bonjour", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
+        Assertions.assertEquals(
+            val1.getOrThrow(),
+            rolling.translateDetecting("Hello", Locale.ENGLISH, Locale.FRENCH).join(),
+        )
+        Assertions.assertEquals(
+            val2.getOrThrow(),
+            rolling.translateDetecting("Hello", Locale.ENGLISH, Locale.FRENCH).join(),
+        )
+        Assertions.assertEquals(
+            val1.getOrThrow(),
+            rolling.translateDetecting("Hello", Locale.ENGLISH, Locale.FRENCH).join(),
+        )
+        Assertions.assertEquals(
+            val2.getOrThrow(),
+            rolling.translateDetecting("Hello", Locale.ENGLISH, Locale.FRENCH).join(),
+        )
 
         Assertions.assertEquals(2, translator1.successCount)
         Assertions.assertEquals(0, translator1.failureCount)
@@ -53,15 +66,21 @@ class RollingTranslatorTest {
     @Test
     fun `test failure`() {
         val translator1 = TestTranslator()
-        translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
-            TranslationResult.Failure(RateLimitedException())
+        val val1 = translationFailure(RateLimitedException())
+        translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = val1
         val translator2 = TestTranslator()
-        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
-            TranslationResult.Success("Bonjour")
-        val rolling = RollingTranslator(listOf(translator1, translator2), Translator.None)
+        val val2 = translationSuccess("Bonjour")
+        translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = val2
+        val rolling = RollingTranslator(listOf(translator1, translator2), Translator.noop())
 
-        Assertions.assertEquals("Bonjour", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
-        Assertions.assertEquals("Bonjour", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
+        Assertions.assertEquals(
+            val2.getOrThrow(),
+            rolling.translateDetecting("Hello", Locale.ENGLISH, Locale.FRENCH).join(),
+        )
+        Assertions.assertEquals(
+            val2.getOrThrow(),
+            rolling.translateDetecting("Hello", Locale.ENGLISH, Locale.FRENCH).join(),
+        )
 
         Assertions.assertEquals(0, translator1.successCount)
         Assertions.assertEquals(1, translator1.failureCount)
@@ -74,16 +93,23 @@ class RollingTranslatorTest {
     fun `test fallback`() {
         val translator1 = TestTranslator()
         translator1.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
-            TranslationResult.Failure(RateLimitedException())
+            translationFailure(RateLimitedException())
         val translator2 = TestTranslator()
         translator2.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] =
-            TranslationResult.Failure(RateLimitedException())
+            translationFailure(RateLimitedException())
         val fallback = TestTranslator()
-        fallback.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = TranslationResult.Success("Bonjour")
+        val result = translationSuccess("Bonjour")
+        fallback.results[TranslationKey("Hello", Locale.ENGLISH, Locale.FRENCH)] = result
         val rolling = RollingTranslator(listOf(translator1, translator2), fallback)
 
-        Assertions.assertEquals("Bonjour", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
-        Assertions.assertEquals("Bonjour", rolling.translate("Hello", Locale.ENGLISH, Locale.FRENCH).join())
+        Assertions.assertEquals(
+            result.getOrThrow(),
+            rolling.translateDetecting("Hello", Locale.ENGLISH, Locale.FRENCH).join(),
+        )
+        Assertions.assertEquals(
+            result.getOrThrow(),
+            rolling.translateDetecting("Hello", Locale.ENGLISH, Locale.FRENCH).join(),
+        )
 
         Assertions.assertEquals(0, translator1.successCount)
         Assertions.assertEquals(2, translator1.failureCount)

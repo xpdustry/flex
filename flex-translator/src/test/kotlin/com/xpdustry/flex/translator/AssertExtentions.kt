@@ -25,28 +25,11 @@
  */
 package com.xpdustry.flex.translator
 
-import com.xpdustry.flex.util.assertDoesNotThrowsAndReturns
-import java.net.URI
-import java.util.Locale
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
+import org.junit.jupiter.api.function.ThrowingSupplier
 
-class LibreTranslateTranslatorTest {
-    @EnabledIfEnvironmentVariable(named = ENDPOINT_ENV, matches = ".+")
-    @EnabledIfEnvironmentVariable(named = API_KEY_ENV, matches = ".+")
-    @Test
-    fun test() {
-        val translator = assertDoesNotThrowsAndReturns {
-            LibreTranslateTranslator(URI(System.getenv(ENDPOINT_ENV)), System.getenv(API_KEY_ENV))
-        }
-        Assertions.assertTrue(translator.languages.isNotEmpty())
-        Assertions.assertTrue(translator.languages.values.flatten().isNotEmpty())
-        Assertions.assertDoesNotThrow { translator.translate("Bonjour", Locale.FRENCH, Locale.ENGLISH).join() }
-    }
+fun <T> assertDoesNotThrowsAndReturns(block: () -> T): T = Assertions.assertDoesNotThrow(ThrowingSupplier(block))
 
-    companion object {
-        private const val ENDPOINT_ENV = "FLEX_TEST_TRANSLATOR_LT_ENDPOINT"
-        private const val API_KEY_ENV = "FLEX_TEST_TRANSLATOR_LT_API_KEY"
-    }
-}
+fun translationSuccess(text: String) = Result.success(TranslatedText(text))
+
+fun translationFailure(throwable: Throwable) = Result.failure<TranslatedText>(throwable)
