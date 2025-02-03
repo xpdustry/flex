@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## v1.2.0 - 2025-02-03
+
+### Features
+
+- Flex translator has now a dedicated module! Get it at `com.xpdustry:flex-translator:VERSION`,
+  the plugin API is still located at `com.xpdustry:flex:VERSION`.
+- Added `Translator#translateDetecting` and deprecate `Translator#translate`.
+- Added bulk translation methods for `Translator`.
+- Made the `PlayerNameHook` config re-loadable at runtime.
+- Added the `hooks.name.maximum-name-size` config for `PlayerNameHook`.
+  If a name goes beyond that size, it will be reset to the original player name.
+
+### Bugfixes
+
+- Fixed rolling translator not rolling correctly.
+- Fixed the tests not running correctly in the CI, leading to unexpected behavior.
+
 ## v1.1.0 - 2025-01-09
 
 ### Features
