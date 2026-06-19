@@ -23,7 +23,7 @@ deepl = "1.8.0"
 caffeine = "3.2.0"
 
 # testing
-junit = "5.11.4"
+junit = "6.0.3"
 
 [libraries]
 # runtime
